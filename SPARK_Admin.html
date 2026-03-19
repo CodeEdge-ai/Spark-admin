@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPARK Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b0a;--surface:#0f1512;--surface2:#161e1a;--surface3:#1d2822;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);--border3:rgba(255,255,255,.18);
+  --emerald:#4ade80;--emerald2:#22c55e;--emerald3:#16a34a;--eglow:rgba(74,222,128,.15);
+  --gold:#f0c040;--gglow:rgba(240,192,64,.12);
+  --red:#f87171;--blue:#60a5fa;--purple:#a78bfa;
+  --white:#eef2f0;--muted:#5a7468;--muted2:#3d5048;
+  --radius:14px;--shadow:0 8px 40px rgba(0,0,0,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--white);display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 60% 40% at 80% 10%,rgba(74,222,128,.04) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 30% at 10% 90%,rgba(96,165,250,.03) 0%,transparent 60%);
+  pointer-events:none;z-index:0}
+
+/* ── SETUP SCREEN ─────────────────────────────────────────────── */
+#setup{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:900;padding:24px}
+.setup-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:44px 40px;max-width:480px;width:100%}
+.setup-logo{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:300;color:var(--white);margin-bottom:6px}
+.setup-logo em{font-style:italic;color:var(--emerald)}
+.setup-sub{font-size:13px;color:var(--muted);margin-bottom:32px}
+.setup-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.setup-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--white);outline:none;margin-bottom:16px;transition:border-color .2s}
+.setup-input:focus{border-color:var(--emerald)}
+.setup-input::placeholder{color:var(--muted2)}
+.setup-btn{width:100%;background:var(--emerald);color:#050d08;border:none;border-radius:10px;padding:13px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.02em;transition:opacity .2s}
+.setup-btn:hover{opacity:.88}
+.setup-note{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;text-align:center}
+
+/* ── APP SHELL ────────────────────────────────────────────────── */
+#app{display:none;flex-direction:column;height:100%;position:relative;z-index:1}
+
+/* ── TOP NAV ──────────────────────────────────────────────────── */
+.topnav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid var(--border);flex-shrink:0;background:rgba(8,11,10,.8);backdrop-filter:blur(12px);position:relative;z-index:10}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--white);letter-spacing:.02em}
+.nav-logo em{font-style:italic;color:var(--emerald)}
+.nav-tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:3px}
+.nav-tab{padding:6px 16px;border-radius:100px;border:none;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav-tab.active{background:var(--emerald);color:#050d08;font-weight:700}
+.nav-right{display:flex;align-items:center;gap:8px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--muted2)}
+.sdot.live{background:var(--emerald);box-shadow:0 0 6px var(--emerald);animation:pulse 2.5s infinite}
+.sdot.err{background:var(--red)}
+.sdot.loading{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.status-txt{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.icon-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 11px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s}
+.icon-btn:hover{color:var(--white);border-color:var(--emerald)}
+
+/* ── CONTENT AREA ─────────────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* ── GRID / CARDS ─────────────────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 18px;position:relative;overflow:hidden;transition:border-color .25s,transform .2s}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-icon{font-size:18px;margin-bottom:10px}
+.stat-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--white);line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── PANEL ─────────────────────────────────────────────────────── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--white);letter-spacing:.02em}
+.panel-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:100px}
+.panel-body{padding:16px 18px}
+
+/* ── AI BRIEF ──────────────────────────────────────────────────── */
+.ai-brief{background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(96,165,250,.04));border:1px solid rgba(74,222,128,.18);border-radius:var(--radius);padding:20px;margin-bottom:20px;position:relative;overflow:hidden}
+.ai-brief::before{content:'✦';position:absolute;top:16px;right:20px;font-size:28px;color:rgba(74,222,128,.15)}
+.ai-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:8px}
+.ai-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:10px}
+.ai-content{font-size:13px;color:rgba(238,242,240,.8);line-height:1.75}
+.ai-content p{margin-bottom:10px}
+.ai-content p:last-child{margin-bottom:0}
+.ai-loading{display:flex;align-items:center;gap:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.ai-spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CONTACTS ──────────────────────────────────────────────────── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-box{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--white);outline:none;transition:border-color .2s}
+.search-box:focus{border-color:var(--emerald)}
+.search-box::placeholder{color:var(--muted2)}
+.filter-select{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:9px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--white);outline:none;cursor:pointer;appearance:none;min-width:140px}
+.btn{border:none;border-radius:10px;padding:9px 18px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-primary{background:var(--emerald);color:#050d08}
+.btn-primary:hover{opacity:.88}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border2);color:var(--white)}
+.btn-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
+.btn-danger{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+.btn-sm{padding:5px 12px;font-size:11px}
+
+/* ── CONTACT TABLE ─────────────────────────────────────────────── */
+.ctable{width:100%;border-collapse:collapse}
+.ctable th{text-align:left;padding:10px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500}
+.ctable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.ctable tr:last-child td{border-bottom:none}
+.ctable tr:hover td{background:rgba(255,255,255,.02)}
+.ctable input[type=checkbox]{accent-color:var(--emerald);width:14px;height:14px;cursor:pointer}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--emerald);font-family:'DM Mono',monospace;flex-shrink:0}
+.name-cell{display:flex;align-items:center;gap:10px}
+.contact-name{font-weight:500;color:var(--white)}
+.contact-meta{font-size:11px;color:var(--muted);margin-top:1px}
+.session-tag{display:inline-block;background:var(--eglow);border:1px solid rgba(74,222,128,.2);border-radius:100px;padding:2px 8px;font-size:10px;color:var(--emerald);font-family:'DM Mono',monospace;margin:1px;white-space:nowrap}
+.mono{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)}
+.action-cell{display:flex;align-items:center;gap:5px}
+.wa-btn{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);border-radius:6px;padding:4px 9px;font-size:10px;font-weight:600;color:#25d366;cursor:pointer;text-decoration:none;font-family:'DM Mono',monospace;white-space:nowrap;display:inline-block}
+.em-btn{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);border-radius:6px;padding:4px 9px;font-size:10px;font-weight:600;color:var(--blue);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap}
+.edit-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;font-size:10px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace}
+.edit-btn:hover{color:var(--white);border-color:var(--border3)}
+
+/* ── SESSIONS LIST ─────────────────────────────────────────────── */
+.sess-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+.sess-row:last-child{border-bottom:none}
+.sess-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:90px}
+.sess-info{flex:1}
+.sess-name{font-size:13px;font-weight:500;color:var(--white)}
+.sess-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.sess-attendees{font-family:'DM Mono',monospace;font-size:12px;color:var(--emerald)}
+.sess-rev{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--white)}
+.pill{display:inline-block;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
+.pill-green{background:var(--eglow);color:var(--emerald)}
+.pill-gold{background:var(--gglow);color:var(--gold)}
+.pill-blue{background:rgba(96,165,250,.12);color:var(--blue)}
+.pill-red{background:rgba(248,113,113,.12);color:var(--red)}
+.pill-purple{background:rgba(167,139,250,.12);color:var(--purple)}
+
+/* ── BROADCAST ─────────────────────────────────────────────────── */
+.bcast-grid{display:grid;grid-template-columns:300px 1fr;gap:16px}
+.audience-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
+.audience-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .2s}
+.audience-item.selected{border-color:var(--emerald);background:var(--eglow)}
+.audience-item input[type=checkbox]{accent-color:var(--emerald)}
+.audience-name{font-size:13px;font-weight:500;color:var(--white)}
+.audience-meta{font-size:11px;color:var(--muted)}
+.msg-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:10px;position:relative}
+.msg-card-name{font-size:12px;font-weight:600;color:var(--emerald);margin-bottom:6px;font-family:'DM Mono',monospace}
+.msg-text{font-size:13px;color:var(--white);line-height:1.6;white-space:pre-wrap;font-family:'DM Mono',monospace;font-size:12px}
+.msg-actions{display:flex;gap:6px;margin-top:10px}
+.copy-btn{background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:10px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace}
+.copy-btn:hover{color:var(--white)}
+
+/* ── AI CHAT ───────────────────────────────────────────────────── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px)}
+.chat-msgs{flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:14px}
+.msg-user,.msg-ai{max-width:75%;padding:12px 16px;border-radius:14px;font-size:13px;line-height:1.7}
+.msg-user{align-self:flex-end;background:var(--emerald);color:#050d08;border-radius:14px 14px 4px 14px;font-weight:500}
+.msg-ai{align-self:flex-start;background:var(--surface2);border:1px solid var(--border2);color:var(--white);border-radius:14px 14px 14px 4px}
+.msg-ai p{margin-bottom:6px}
+.msg-ai p:last-child{margin-bottom:0}
+.chat-input-row{display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.chat-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px 16px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--white);outline:none;resize:none;transition:border-color .2s;line-height:1.5}
+.chat-input:focus{border-color:var(--emerald)}
+.chat-send{background:var(--emerald);color:#050d08;border:none;border-radius:12px;padding:12px 20px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.chat-send:hover{opacity:.88}
+.chat-send:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── MODAL ─────────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--white)}
+.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 6px}
+.modal-body{padding:22px}
+.form-group{margin-bottom:16px}
+.form-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--white);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--emerald)}
+.form-input::placeholder{color:var(--muted2)}
+.session-checkboxes{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.sess-check{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;transition:border-color .2s;font-size:12px;color:var(--white)}
+.sess-check:has(input:checked){border-color:var(--emerald);background:var(--eglow);color:var(--emerald)}
+.sess-check input{accent-color:var(--emerald);cursor:pointer}
+.form-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* ── MISC ──────────────────────────────────────────────────────── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:4px}
+.section-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+.badge-count{display:inline-flex;align-items:center;justify-content:center;background:var(--red);color:#fff;border-radius:100px;font-size:9px;font-weight:700;font-family:'DM Mono',monospace;min-width:16px;height:16px;padding:0 4px;margin-left:4px}
+.follow-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.follow-row:last-child{border-bottom:none}
+.follow-name{flex:1;font-weight:500;color:var(--white)}
+.follow-meta{font-size:11px;color:var(--muted)}
+.follow-reason{font-size:11px;background:var(--gglow);border:1px solid rgba(240,192,64,.2);border-radius:6px;padding:2px 8px;color:var(--gold);font-family:'DM Mono',monospace}
+.sparkline-mini{display:inline-block;vertical-align:middle;margin-left:6px}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--emerald);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--white);z-index:1000;box-shadow:var(--shadow);transform:translateY(80px);opacity:0;transition:all .3s;font-family:'DM Mono',monospace}
+.toast.show{transform:translateY(0);opacity:1}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease both}
+
+@media(max-width:800px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .nav-tabs{display:none}
+  .bcast-grid{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="setup-card">
+    <div class="setup-logo">SPARK <em>Admin</em></div>
+    <div class="setup-sub">AI-powered studio management. Enter your Anthropic API key to continue.</div>
+    <div class="setup-label">Anthropic API Key</div>
+    <input class="setup-input" id="api-key-input" type="password" placeholder="sk-ant-api03-...">
+    <div class="setup-label">Your Name (for messages)</div>
+    <input class="setup-input" id="admin-name-input" type="text" placeholder="e.g. Sarah">
+    <button class="setup-btn" onclick="completeSetup()">Enter Dashboard →</button>
+    <div class="setup-note">Your API key is stored only in this browser and never sent anywhere except directly to Anthropic. Get a key at <strong>console.anthropic.com</strong></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="topnav">
+    <div class="nav-logo">SPARK <em>Admin</em></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+      <button class="nav-tab" onclick="showTab('contacts')">Contacts</button>
+      <button class="nav-tab" onclick="showTab('sessions')">Sessions</button>
+      <button class="nav-tab" onclick="showTab('broadcast')">Broadcast</button>
+      <button class="nav-tab" onclick="showTab('ai')">AI Assistant</button>
+    </div>
+    <div class="nav-right">
+      <div class="sdot" id="sdot"></div>
+      <span class="status-txt" id="stxt">—</span>
+      <button class="icon-btn" onclick="syncData()">↻ Sync</button>
+      <button class="icon-btn" onclick="openSettings()">⚙</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ────────────────────────────────────────────── -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <div class="ai-brief" id="ai-brief">
+        <div class="ai-eyebrow">✦ AI Daily Brief</div>
+        <div class="ai-title" id="brief-title">Loading today's brief...</div>
+        <div class="ai-content" id="brief-content">
+          <div class="ai-loading"><div class="ai-spinner"></div><span>Analysing your studio data...</span></div>
+        </div>
+      </div>
+
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card"><div class="stat-icon">🧘</div><div class="stat-label">Total Sessions</div><div class="stat-val" id="s-sessions">—</div><div class="stat-sub">all time</div></div>
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Total Clients</div><div class="stat-val" id="s-clients">—</div><div class="stat-sub">in database</div></div>
+        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">This Month</div><div class="stat-val" id="s-revenue" style="color:var(--emerald);font-size:22px">—</div><div class="stat-sub" id="s-month">revenue</div></div>
+        <div class="stat-card"><div class="stat-icon">📤</div><div class="stat-label">Owed</div><div class="stat-val" id="s-owed" style="color:var(--gold);font-size:22px">—</div><div class="stat-sub">practitioner payouts</div></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Follow-up Needed</div><div class="panel-badge" id="follow-badge">loading...</div></div>
+          <div class="panel-body" id="follow-list"><div class="ai-loading"><div class="ai-spinner"></div><span>Checking...</span></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Recent Sessions</div><div class="panel-badge" id="recent-badge">—</div></div>
+          <div class="panel-body" id="recent-sessions"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTACTS ─────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-contacts">
+      <div class="section-title">Client Contacts</div>
+      <div class="section-sub">All clients organised by sessions attended. Add contacts manually or import from CSV.</div>
+      <div class="toolbar">
+        <input class="search-box" id="contact-search" placeholder="Search name, phone, email..." oninput="renderContacts()">
+        <select class="filter-select" id="contact-filter" onchange="renderContacts()">
+          <option value="">All sessions</option>
+          <option value="Sound Meditation">Sound Meditation</option>
+          <option value="Kundalini">Kundalini Yoga</option>
+          <option value="Breathwork">Breathwork</option>
+          <option value="Vinyasa">Vinyasa Yoga</option>
+          <option value="Hatha Kriya">Hatha Kriya</option>
+        </select>
+        <button class="btn btn-primary" onclick="openAddContact()">+ Add Contact</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('csv-input').click()">⬆ Import CSV</button>
+        <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="importCSV(event)">
+      </div>
+      <div class="panel" style="overflow-x:auto">
+        <table class="ctable">
+          <thead><tr>
+            <th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
+            <th>Client</th><th>Phone</th><th>Email</th><th>Sessions</th><th>Last Seen</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="contacts-tbody"></tbody>
+        </table>
+      </div>
+      <div id="bulk-actions" style="display:none" class="toolbar">
+        <span class="status-txt" id="selected-count">0 selected</span>
+        <button class="btn btn-ghost btn-sm" onclick="bulkWhatsApp()">📲 WhatsApp Selected</button>
+        <button class="btn btn-ghost btn-sm" onclick="bulkEmail()">✉ Email Selected</button>
+        <button class="btn btn-danger btn-sm" onclick="bulkDelete()">🗑 Delete</button>
+      </div>
+    </div>
+
+    <!-- ── SESSIONS ─────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-sessions">
+      <div class="section-title">Session History</div>
+      <div class="section-sub">Live data from your Google Sheet — auto-updates every 5 minutes.</div>
+      <div class="panel" id="sessions-panel">
+        <div class="panel-body" id="sessions-list"><div class="ai-loading"><div class="ai-spinner"></div><span>Loading sessions...</span></div></div>
+      </div>
+    </div>
+
+    <!-- ── BROADCAST ─────────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-broadcast">
+      <div class="section-title">AI Broadcast</div>
+      <div class="section-sub">Select your audience, choose a message type, and let AI write personalised messages for each client.</div>
+      <div class="bcast-grid">
+        <div>
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">Audience</div><div class="panel-badge" id="aud-count">0 selected</div></div>
+            <div class="panel-body">
+              <div style="margin-bottom:10px">
+                <select class="filter-select" style="width:100%;margin-bottom:8px" id="aud-filter" onchange="filterAudience()">
+                  <option value="">All contacts</option>
+                  <option value="Sound Meditation">Sound Meditation attendees</option>
+                  <option value="Kundalini">Kundalini Yoga attendees</option>
+                  <option value="Breathwork">Breathwork attendees</option>
+                  <option value="Vinyasa">Vinyasa Yoga attendees</option>
+                  <option value="Hatha Kriya">Hatha Kriya attendees</option>
+                  <option value="inactive">Inactive (30+ days)</option>
+                </select>
+                <button class="btn btn-ghost" style="width:100%;font-size:12px" onclick="selectAllAudience()">Select All</button>
+              </div>
+              <div class="audience-list" id="audience-list"></div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:0">
+            <div class="panel-head"><div class="panel-title">Message Type</div></div>
+            <div class="panel-body">
+              <select class="filter-select" style="width:100%;margin-bottom:10px" id="msg-type">
+                <option value="session_reminder">📅 Session Reminder</option>
+                <option value="follow_up">💚 Post-Session Follow-up</option>
+                <option value="new_session">✨ New Session Announcement</option>
+                <option value="win_back">🌿 Win-Back (Inactive)</option>
+                <option value="general">💬 General Check-in</option>
+              </select>
+              <div class="form-group" style="margin-bottom:10px">
+                <label class="form-label">Context for AI (optional)</label>
+                <textarea class="form-input" id="msg-context" rows="3" placeholder="e.g. Next Sound Bath is Saturday 5th April at 10am, KES 888, with Anastancia"></textarea>
+              </div>
+              <button class="btn btn-primary" style="width:100%" onclick="generateBroadcast()">✦ Generate Messages</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Generated Messages</div>
+              <div style="display:flex;gap:6px">
+                <div class="panel-badge" id="msg-count">0 messages</div>
+                <button class="btn btn-ghost btn-sm" id="send-all-btn" onclick="sendAllWhatsApp()" style="display:none">Send All via WhatsApp</button>
+              </div>
+            </div>
+            <div class="panel-body" id="broadcast-messages">
+              <div class="empty"><div class="empty-icon">✦</div>Select your audience and message type, then tap Generate.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AI ASSISTANT ──────────────────────────────────────────── -->
+    <div class="tab-pane" id="tab-ai">
+      <div class="section-title">AI Assistant</div>
+      <div class="section-sub">Ask anything about your studio — finances, clients, sessions, strategy.</div>
+      <div class="chat-wrap">
+        <div class="chat-msgs" id="chat-msgs">
+          <div class="msg-ai fade-in">
+            <p>Hello 👋 I'm your SPARK Studio AI assistant. I have full context of your session data, client history, and financials.</p>
+            <p>Ask me anything — <em>"Who hasn't booked in 3 weeks?"</em>, <em>"What's the best performing session type?"</em>, or <em>"Write me an Instagram caption for our next sound bath."</em></p>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ask anything about your studio..." onkeydown="chatKeydown(event)"></textarea>
+          <button class="chat-send" id="chat-send" onclick="sendChat()">Send ↑</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD CONTACT MODAL -->
+<div class="modal-overlay" id="contact-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="contact-modal-title">Add Contact</div>
+      <button class="modal-close" onclick="closeContactModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="contact-edit-id">
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" id="c-name" placeholder="e.g. Sarah Kamau">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (WhatsApp) *</label>
+        <input class="form-input" id="c-phone" placeholder="e.g. 254722123456">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="c-email" placeholder="e.g. sarah@email.com" type="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input class="form-input" id="c-notes" placeholder="e.g. Prefers sound meditation, referred by Lut">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sessions Attended</label>
+        <div class="session-checkboxes">
+          <label class="sess-check"><input type="checkbox" value="Sound Meditation"> Sound Meditation</label>
+          <label class="sess-check"><input type="checkbox" value="Kundalini Yoga"> Kundalini Yoga</label>
+          <label class="sess-check"><input type="checkbox" value="Breathwork"> Breathwork</label>
+          <label class="sess-check"><input type="checkbox" value="Vinyasa Yoga"> Vinyasa Yoga</label>
+          <label class="sess-check"><input type="checkbox" value="Hatha Kriya"> Hatha Kriya</label>
+        </div>
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="closeContactModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close" onclick="closeSettingsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Anthropic API Key</label>
+        <input class="form-input" id="s-apikey" type="password" placeholder="sk-ant-api03-...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Admin Name</label>
+        <input class="form-input" id="s-name" placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Studio Name</label>
+        <input class="form-input" id="s-studio" placeholder="SPARK Studio">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Studio WhatsApp Number</label>
+        <input class="form-input" id="s-waphone" placeholder="254700000000">
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettingsModal()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const SHEET='2PACX-1vR7vqT3yeUecPwtwWHBXZTLkrvqnq7MTBDFRbtfVRcHjSKCLxZeMJekvV5mRb8i72dWDf3D55SfQmAa';
+const CSV_URLS={
+  sessions:`https://docs.google.com/spreadsheets/d/e/${SHEET}/pub?gid=0&single=true&output=csv`,
+  practitioners:`https://docs.google.com/spreadsheets/d/e/${SHEET}/pub?gid=135420663&single=true&output=csv`,
+  history:`https://docs.google.com/spreadsheets/d/e/${SHEET}/pub?gid=1394578292&single=true&output=csv`
+};
+const PROXIES=[
+  u=>u,
+  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+];
+const REFRESH_MS=5*60*1000;
+const DEFAULT_COMMISSION=0.5;
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let sessions=[], practitioners=[], history=[], months=[];
+let contacts=JSON.parse(localStorage.getItem('spark_contacts')||'[]');
+let apiKey=localStorage.getItem('spark_apikey')||'';
+let adminName=localStorage.getItem('spark_admin_name')||'';
+let studioName=localStorage.getItem('spark_studio_name')||'SPARK Studio';
+let studioPhone=localStorage.getItem('spark_wa_phone')||'';
+let selectedContacts=new Set();
+let selectedAudience=new Set();
+let refreshTimer=null;
+let sessionHeaders=[];
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+window.onload=()=>{
+  if(apiKey && adminName){
+    document.getElementById('setup').style.display='none';
+    document.getElementById('app').style.display='flex';
+    init();
+  }
+};
+
+function completeSetup(){
+  const key=document.getElementById('api-key-input').value.trim();
+  const name=document.getElementById('admin-name-input').value.trim();
+  if(!key||!key.startsWith('sk-')){showToast('Please enter a valid API key');return;}
+  if(!name){showToast('Please enter your name');return;}
+  localStorage.setItem('spark_apikey',key);
+  localStorage.setItem('spark_admin_name',name);
+  apiKey=key; adminName=name;
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='flex';
+  init();
+}
+
+async function init(){
+  renderContactsTable();
+  renderAudienceList();
+  await syncData();
+  if(refreshTimer)clearInterval(refreshTimer);
+  refreshTimer=setInterval(syncData,REFRESH_MS);
+}
+
+// ── FETCH ────────────────────────────────────────────────────────────────────
+async function fetchCSV(url){
+  for(const px of PROXIES){
+    try{
+      const res=await fetch(px(url),{signal:AbortSignal.timeout(9000)});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      const t=await res.text();
+      if(t.trim().length>10&&t.includes(','))return t;
+    }catch(e){}
+  }
+  throw new Error('All proxies failed');
+}
+
+function parseCSV(text,storeHdrs=false){
+  const lines=text.trim().split(/\r?\n/);
+  if(lines.length<2)return[];
+  const hdrs=splitCSV(lines[0]).map(h=>h.trim().replace(/^"|"$/g,''));
+  if(storeHdrs)sessionHeaders=hdrs;
+  return lines.slice(1).map(line=>{
+    const cols=splitCSV(line),obj={};
+    hdrs.forEach((h,i)=>{obj[h]=(cols[i]||'').trim().replace(/^"|"$/g,'');});
+    obj.__cols=cols.map(c=>(c||'').trim().replace(/^"|"$/g,''));
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>typeof v==='string'&&v.trim()!==''));
+}
+
+function splitCSV(line){
+  const res=[];let cur='',q=false;
+  for(const c of line){if(c==='"')q=!q;else if(c===','&&!q){res.push(cur);cur='';}else cur+=c;}
+  res.push(cur);return res;
+}
+
+function f(row,...keys){
+  for(const k of keys){
+    if(row[k]!==undefined&&row[k].trim()!=='')return row[k].trim();
+    const fk=Object.keys(row).find(rk=>rk.trim().toLowerCase()===k.toLowerCase());
+    if(fk&&row[fk].trim()!=='')return row[fk].trim();
+  }
+  return'';
+}
+function n(v){const x=parseFloat((v||'').replace(/[^0-9.-]/g,''));return isNaN(x)?0:x;}
+function fmt(v){return'KES '+Math.round(v).toLocaleString();}
+function ini(s){return(s||'??').slice(0,2).toUpperCase();}
+
+function getPractRecv(row){
+  const byName=n(f(row,'Pract Recv.','Pract Recv','Pract. Recv','Practitioner Recv','Practitioner Received','Pract Recv AUTO'));
+  if(byName>0)return byName;
+  const idx=sessionHeaders.findIndex(h=>['pract recv','pract recv.','pract. recv','practitioner recv','practitioner received'].includes(h.toLowerCase().trim()));
+  const i=idx>=0?idx:8;
+  return row.__cols&&row.__cols[i]?n(row.__cols[i]):0;
+}
+
+// ── SYNC ─────────────────────────────────────────────────────────────────────
+async function syncData(){
+  setStatus('loading','Syncing...');
+  try{
+    const[st,pt,ht]=await Promise.all([fetchCSV(CSV_URLS.sessions),fetchCSV(CSV_URLS.practitioners),fetchCSV(CSV_URLS.history)]);
+    sessions=parseCSV(st,true).filter(r=>{const m=f(r,'Month','month');return f(r,'Date','date')&&m&&!m.includes('1899')&&m.trim()!=='';});
+    practitioners=parseCSV(pt).filter(r=>f(r,'Name','Practitioner Name','name')!=='');
+    history=parseCSV(ht).filter(r=>f(r,'Practitioner','practitioner')!=='');
+    const set=new Set();
+    sessions.forEach(r=>{const m=f(r,'Month','month');if(m&&!m.includes('1899'))set.add(m.trim());});
+    months=Array.from(set).sort((a,b)=>new Date('1 '+a)-new Date('1 '+b));
+    setStatus('live',`Live · ${new Date().toLocaleTimeString()}`);
+    renderDashboard();
+    renderSessionsList();
+    renderAudienceList();
+    // Auto-link contacts to sessions by name
+    autoLinkContacts();
+    // Generate daily brief (once per session)
+    const today=new Date().toDateString();
+    const lastBrief=localStorage.getItem('spark_brief_date');
+    if(lastBrief!==today){generateDailyBrief();localStorage.setItem('spark_brief_date',today);}
+    else{const saved=localStorage.getItem('spark_brief_text');if(saved){const d=JSON.parse(saved);showBrief(d.title,d.content);}}
+  }catch(e){
+    setStatus('err','Sync failed');
+    console.error(e);
+  }
+}
+
+// ── AUTO-LINK CONTACTS ────────────────────────────────────────────────────────
+function autoLinkContacts(){
+  // Match session rows to contacts by practitioner name or attendee reference
+  // Also update "last seen" date for contacts based on sessions
+  let changed=false;
+  sessions.forEach(r=>{
+    const pract=f(r,'Practitioner','practitioner');
+    const month=f(r,'Month','month');
+    const date=f(r,'Date','date');
+    const type=f(r,'Type','Session Type','type')||f(r,'Session Name','session name');
+    if(!pract||!date)return;
+    // Find contact matching practitioner name
+    const contact=contacts.find(c=>c.name.toLowerCase().includes(pract.toLowerCase())||pract.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]));
+    if(contact){
+      if(!contact.sessions)contact.sessions=[];
+      const normType=type||'Session';
+      if(!contact.sessions.includes(normType)){contact.sessions.push(normType);changed=true;}
+      if(!contact.lastSeen||new Date(date)>new Date(contact.lastSeen)){contact.lastSeen=date;changed=true;}
+    }
+  });
+  if(changed){localStorage.setItem('spark_contacts',JSON.stringify(contacts));renderContactsTable();}
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  // Stats
+  document.getElementById('s-sessions').textContent=sessions.length;
+  document.getElementById('s-clients').textContent=contacts.length;
+  const curMonth=months[months.length-1]||'';
+  document.getElementById('s-month').textContent=curMonth+' revenue';
+  const mRows=sessions.filter(r=>f(r,'Month','month').trim()===curMonth);
+  const mRev=mRows.reduce((s,r)=>s+n(f(r,'Total Rev.','Total Rev','Total Revenue')),0);
+  document.getElementById('s-revenue').textContent=fmt(mRev);
+  // Owed
+  const practs=[...new Set(mRows.map(r=>f(r,'Practitioner','practitioner')).filter(Boolean))];
+  let totalOwed=0;
+  practs.forEach(name=>{
+    const b=calcBalance(name,curMonth);
+    const paid=history.some(r=>f(r,'Practitioner','practitioner').toLowerCase()===name.toLowerCase()&&f(r,'Month Covered','month covered','Month','month').toLowerCase()===curMonth.toLowerCase());
+    if(!paid)totalOwed+=b.netOwed;
+  });
+  document.getElementById('s-owed').textContent=fmt(totalOwed);
+  // Recent sessions
+  const recent=sessions.slice(-5).reverse();
+  document.getElementById('recent-badge').textContent=`last ${recent.length}`;
+  document.getElementById('recent-sessions').innerHTML=recent.map(r=>`
+    <div class="sess-row">
+      <div class="sess-date">${f(r,'Date','date')}</div>
+      <div class="sess-info">
+        <div class="sess-name">${f(r,'Session Name','Session','type','Type')||f(r,'Type','type')}</div>
+        <div class="sess-meta">${f(r,'Practitioner','practitioner')} · ${f(r,'Attendees','attendees')} attendees</div>
+      </div>
+      <div>${fmt(n(f(r,'Total Rev.','Total Rev','Total Revenue')))}</div>
+    </div>`).join('');
+  // Follow-up list
+  renderFollowUp();
+}
+
+function renderFollowUp(){
+  const now=new Date();
+  const needsFollowUp=contacts.filter(c=>{
+    if(!c.lastSeen)return false;
+    const d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));
+    return !isNaN(d)&&(now-d)/(1000*60*60*24)>=21;
+  }).slice(0,6);
+  document.getElementById('follow-badge').textContent=needsFollowUp.length>0?`${needsFollowUp.length} clients`:'all clear ✓';
+  if(!needsFollowUp.length){
+    document.getElementById('follow-list').innerHTML=`<div class="empty"><div class="empty-icon">✓</div>All clients followed up recently.</div>`;
+    return;
+  }
+  document.getElementById('follow-list').innerHTML=needsFollowUp.map(c=>{
+    const d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));
+    const days=Math.round((now-d)/(1000*60*60*24));
+    const waMsg=encodeURIComponent(`Hi ${c.name.split(' ')[0]}, just checking in! It's been a while since we've seen you at SPARK Studio. We have some great sessions coming up — would love to have you back 🌿 — ${adminName}`);
+    return`<div class="follow-row">
+      <div class="avatar">${ini(c.name)}</div>
+      <div style="flex:1"><div class="follow-name">${c.name}</div><div class="follow-meta">Last seen: ${c.lastSeen||'unknown'}</div></div>
+      <div class="follow-reason">${days}d ago</div>
+      ${c.phone?`<a class="wa-btn" href="https://wa.me/${c.phone}?text=${waMsg}" target="_blank">📲</a>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── CALC BALANCE ─────────────────────────────────────────────────────────────
+function calcBalance(name,month){
+  const rows=sessions.filter(r=>f(r,'Practitioner','practitioner').toLowerCase()===name.toLowerCase()&&f(r,'Month','month').trim()===month);
+  const pract=practitioners.find(p=>f(p,'Name','Practitioner Name','name').toLowerCase()===name.toLowerCase());
+  let commRate=(pract?n(f(pract,'Commission Rate','Commission','commission')):0)||DEFAULT_COMMISSION;
+  if(commRate>1)commRate/=100;
+  let totalComm=0,totalDirect=0;
+  rows.forEach(r=>{totalComm+=n(f(r,'Total Rev.','Total Rev','Total Revenue'))*commRate;totalDirect+=getPractRecv(r);});
+  const net=totalComm-totalDirect;
+  return{totalComm,totalDirect,netOwed:Math.max(0,net),overpay:Math.max(0,-net),sessions:rows.length};
+}
+
+// ── SESSIONS LIST ─────────────────────────────────────────────────────────────
+function renderSessionsList(){
+  if(!sessions.length){document.getElementById('sessions-list').innerHTML='<div class="empty">No sessions loaded.</div>';return;}
+  const rev=[...sessions].reverse();
+  document.getElementById('sessions-list').innerHTML=rev.map(r=>{
+    const total=n(f(r,'Total Rev.','Total Rev','Total Revenue'));
+    const att=n(f(r,'Attendees','attendees'));
+    const type=f(r,'Session Name','Session','type','Type');
+    const pract=f(r,'Practitioner','practitioner');
+    const month=f(r,'Month','month');
+    const status=f(r,'Status','status');
+    const typeColors={'Sound Meditation':'pill-blue','Kundalini':'pill-green','Breathwork':'pill-purple','Vinyasa':'pill-green','Hatha Kriya':'pill-gold'};
+    const pillCls=typeColors[type]||typeColors[Object.keys(typeColors).find(k=>type.includes(k))]||'pill-green';
+    return`<div class="sess-row">
+      <div class="sess-date" style="font-size:12px">${f(r,'Date','date')}</div>
+      <div class="sess-info">
+        <div class="sess-name"><span class="pill ${pillCls}" style="margin-right:6px">${type}</span></div>
+        <div class="sess-meta">${pract} · ${month}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sess-rev">${fmt(total)}</div>
+        <div class="sess-attendees">${att} attendee${att!==1?'s':''}</div>
+      </div>
+      <div><span class="pill ${status&&status.toLowerCase()==='paid'?'pill-green':'pill-gold'}">${status||'—'}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ── CONTACTS ─────────────────────────────────────────────────────────────────
+function renderContactsTable(){
+  const search=document.getElementById('contact-search')?.value.toLowerCase()||'';
+  const filter=document.getElementById('contact-filter')?.value||'';
+  let filtered=contacts.filter(c=>{
+    const matchSearch=!search||(c.name||'').toLowerCase().includes(search)||(c.phone||'').includes(search)||(c.email||'').toLowerCase().includes(search);
+    const matchFilter=!filter||(c.sessions||[]).some(s=>s.toLowerCase().includes(filter.toLowerCase()));
+    return matchSearch&&matchFilter;
+  });
+  const tbody=document.getElementById('contacts-tbody');
+  if(!tbody)return;
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">👥</div>No contacts found. Add your first client above.</div></td></tr>`;return;}
+  tbody.innerHTML=filtered.map(c=>{
+    const sessions=(c.sessions||[]).map(s=>`<span class="session-tag">${s}</span>`).join('');
+    const waMsg=encodeURIComponent(`Hi ${(c.name||'').split(' ')[0]}! Hope you're well 🌿 — ${adminName}, ${studioName}`);
+    const mailSubj=encodeURIComponent(`Hello from ${studioName}`);
+    return`<tr data-id="${c.id}">
+      <td><input type="checkbox" ${selectedContacts.has(c.id)?'checked':''} onchange="toggleContactSelect('${c.id}',this)"></td>
+      <td><div class="name-cell"><div class="avatar">${ini(c.name)}</div><div><div class="contact-name">${c.name}</div><div class="contact-meta">${c.notes||''}</div></div></div></td>
+      <td><span class="mono">${c.phone||'—'}</span></td>
+      <td><span class="mono" style="font-size:11px">${c.email||'—'}</span></td>
+      <td>${sessions||'<span style="color:var(--muted2);font-size:11px">none yet</span>'}</td>
+      <td><span class="mono" style="font-size:11px">${c.lastSeen||'—'}</span></td>
+      <td><div class="action-cell">
+        ${c.phone?`<a class="wa-btn" href="https://wa.me/${c.phone}?text=${waMsg}" target="_blank">📲</a>`:''}
+        ${c.email?`<a class="em-btn" href="mailto:${c.email}?subject=${mailSubj}" target="_blank">✉</a>`:''}
+        <button class="edit-btn" onclick="editContact('${c.id}')">✏</button>
+        <button class="edit-btn" onclick="deleteContact('${c.id}')" style="color:var(--red)">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  updateBulkBar();
+}
+function renderContacts(){renderContactsTable();}
+
+function toggleContactSelect(id,el){
+  if(el.checked)selectedContacts.add(id);else selectedContacts.delete(id);
+  updateBulkBar();
+}
+function toggleSelectAll(el){
+  document.querySelectorAll('#contacts-tbody input[type=checkbox]').forEach(cb=>{
+    cb.checked=el.checked;
+    const id=cb.closest('tr').dataset.id;
+    if(el.checked)selectedContacts.add(id);else selectedContacts.delete(id);
+  });
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const bar=document.getElementById('bulk-actions');
+  document.getElementById('selected-count').textContent=`${selectedContacts.size} selected`;
+  bar.style.display=selectedContacts.size>0?'flex':'none';
+}
+
+function openAddContact(){
+  document.getElementById('contact-modal-title').textContent='Add Contact';
+  document.getElementById('contact-edit-id').value='';
+  ['c-name','c-phone','c-email','c-notes'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.sess-check input').forEach(cb=>cb.checked=false);
+  document.getElementById('contact-modal').classList.add('open');
+}
+function editContact(id){
+  const c=contacts.find(x=>x.id===id);if(!c)return;
+  document.getElementById('contact-modal-title').textContent='Edit Contact';
+  document.getElementById('contact-edit-id').value=id;
+  document.getElementById('c-name').value=c.name||'';
+  document.getElementById('c-phone').value=c.phone||'';
+  document.getElementById('c-email').value=c.email||'';
+  document.getElementById('c-notes').value=c.notes||'';
+  document.querySelectorAll('.sess-check input').forEach(cb=>{cb.checked=(c.sessions||[]).includes(cb.value);});
+  document.getElementById('contact-modal').classList.add('open');
+}
+function closeContactModal(){document.getElementById('contact-modal').classList.remove('open');}
+
+function saveContact(){
+  const name=document.getElementById('c-name').value.trim();
+  const phone=document.getElementById('c-phone').value.trim().replace(/[^0-9+]/g,'');
+  const email=document.getElementById('c-email').value.trim();
+  const notes=document.getElementById('c-notes').value.trim();
+  if(!name){showToast('Name is required');return;}
+  const sels=[...document.querySelectorAll('.sess-check input:checked')].map(cb=>cb.value);
+  const editId=document.getElementById('contact-edit-id').value;
+  if(editId){
+    const c=contacts.find(x=>x.id===editId);
+    if(c){Object.assign(c,{name,phone,email,notes,sessions:sels});}
+  }else{
+    contacts.push({id:Date.now().toString(),name,phone,email,notes,sessions:sels,lastSeen:'',addedAt:new Date().toISOString()});
+  }
+  localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+  closeContactModal();renderContactsTable();renderAudienceList();
+  showToast(editId?'Contact updated':'Contact added ✓');
+}
+function deleteContact(id){
+  if(!confirm('Delete this contact?'))return;
+  contacts=contacts.filter(c=>c.id!==id);
+  selectedContacts.delete(id);
+  localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+  renderContactsTable();showToast('Deleted');
+}
+function bulkDelete(){
+  if(!confirm(`Delete ${selectedContacts.size} contacts?`))return;
+  contacts=contacts.filter(c=>!selectedContacts.has(c.id));
+  selectedContacts.clear();
+  localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+  renderContactsTable();showToast('Deleted');
+}
+function bulkWhatsApp(){
+  const sel=contacts.filter(c=>selectedContacts.has(c.id)&&c.phone);
+  if(!sel.length){showToast('No contacts with phone numbers selected');return;}
+  sel.forEach((c,i)=>setTimeout(()=>{
+    const msg=encodeURIComponent(`Hi ${c.name.split(' ')[0]}! Hope you're well 🌿 — ${adminName}, ${studioName}`);
+    window.open(`https://wa.me/${c.phone}?text=${msg}`,'_blank');
+  },i*500));
+}
+function bulkEmail(){
+  const sel=contacts.filter(c=>selectedContacts.has(c.id)&&c.email);
+  if(!sel.length){showToast('No contacts with emails selected');return;}
+  window.location.href=`mailto:${sel.map(c=>c.email).join(',')}?subject=Hello from ${studioName}`;
+}
+
+// ── CSV IMPORT ────────────────────────────────────────────────────────────────
+function importCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const lines=ev.target.result.trim().split('\n');
+    const hdrs=lines[0].split(',').map(h=>h.trim().toLowerCase());
+    let added=0;
+    lines.slice(1).forEach(line=>{
+      const cols=line.split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+      const get=key=>{const i=hdrs.findIndex(h=>h.includes(key));return i>=0?cols[i]:'';};
+      const name=get('name');if(!name)return;
+      if(contacts.find(c=>c.name.toLowerCase()===name.toLowerCase()))return;
+      contacts.push({id:Date.now().toString()+Math.random(),name,phone:get('phone').replace(/[^0-9+]/g,''),email:get('email'),notes:get('note'),sessions:[],lastSeen:'',addedAt:new Date().toISOString()});
+      added++;
+    });
+    localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+    renderContactsTable();renderAudienceList();
+    showToast(`Imported ${added} contacts`);
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ── BROADCAST ────────────────────────────────────────────────────────────────
+function renderAudienceList(){
+  const filter=document.getElementById('aud-filter')?.value||'';
+  let filtered=contacts;
+  if(filter==='inactive'){
+    const now=new Date();
+    filtered=contacts.filter(c=>{
+      if(!c.lastSeen)return true;
+      const d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));
+      return isNaN(d)||(now-d)/(1000*60*60*24)>=30;
+    });
+  }else if(filter){
+    filtered=contacts.filter(c=>(c.sessions||[]).some(s=>s.toLowerCase().includes(filter.toLowerCase())));
+  }
+  const el=document.getElementById('audience-list');
+  if(!el)return;
+  if(!filtered.length){el.innerHTML='<div class="empty" style="padding:20px">No contacts match this filter.</div>';return;}
+  el.innerHTML=filtered.map(c=>`
+    <div class="audience-item ${selectedAudience.has(c.id)?'selected':''}" onclick="toggleAudience('${c.id}',this)">
+      <input type="checkbox" ${selectedAudience.has(c.id)?'checked':''} onclick="event.stopPropagation()">
+      <div class="avatar" style="width:26px;height:26px;font-size:10px">${ini(c.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="audience-name">${c.name}</div>
+        <div class="audience-meta">${(c.sessions||[]).join(', ')||'No sessions'}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('aud-count').textContent=`${selectedAudience.size} selected`;
+}
+function filterAudience(){selectedAudience.clear();renderAudienceList();}
+function toggleAudience(id,el){
+  if(selectedAudience.has(id)){selectedAudience.delete(id);el.classList.remove('selected');el.querySelector('input').checked=false;}
+  else{selectedAudience.add(id);el.classList.add('selected');el.querySelector('input').checked=true;}
+  document.getElementById('aud-count').textContent=`${selectedAudience.size} selected`;
+}
+function selectAllAudience(){
+  document.querySelectorAll('.audience-item').forEach(el=>{
+    const id=el.onclick.toString().match(/'([^']+)'/)?.[1];
+    if(id){selectedAudience.add(id);el.classList.add('selected');el.querySelector('input').checked=true;}
+  });
+  document.getElementById('aud-count').textContent=`${selectedAudience.size} selected`;
+}
+
+async function generateBroadcast(){
+  if(!selectedAudience.size){showToast('Select at least one contact');return;}
+  const msgType=document.getElementById('msg-type').value;
+  const context=document.getElementById('msg-context').value.trim();
+  const sel=contacts.filter(c=>selectedAudience.has(c.id));
+  const el=document.getElementById('broadcast-messages');
+  el.innerHTML=`<div class="ai-loading"><div class="ai-spinner"></div><span>Generating ${sel.length} personalised messages...</span></div>`;
+  const typeLabels={session_reminder:'Session Reminder',follow_up:'Post-Session Follow-up',new_session:'New Session Announcement',win_back:'Win-Back',general:'General Check-in'};
+  const curMonth=months[months.length-1]||'this month';
+  const systemPrompt=`You are the AI assistant for ${studioName}, a wellness studio in Nairobi offering sound meditation, breathwork, kundalini yoga, vinyasa yoga and hatha kriya yoga. Sessions cost KES 888 per person. You write warm, personal WhatsApp messages that feel human, not promotional. Keep messages under 150 words. Use *asterisks* for bold in WhatsApp. Always end with "— ${adminName}, ${studioName}". Never use generic phrases like "I hope this message finds you well".`;
+  const messages=[];
+  for(const c of sel){
+    const sessStr=(c.sessions||[]).join(', ')||'various sessions';
+    const lastSeen=c.lastSeen?`last attended on ${c.lastSeen}`:'not yet linked to a session';
+    const prompt=`Write a WhatsApp message for: ${c.name}, who has attended: ${sessStr}, ${lastSeen}. Message type: ${typeLabels[msgType]}. ${context?`Context: ${context}.`:''} Current month: ${curMonth}. Write only the message, nothing else.`;
+    try{
+      const res=await callClaude(systemPrompt,prompt,300);
+      messages.push({contact:c,text:res});
+    }catch(e){messages.push({contact:c,text:`[Error generating message: ${e.message}]`});}
+  }
+  document.getElementById('msg-count').textContent=`${messages.length} messages`;
+  document.getElementById('send-all-btn').style.display='block';
+  el.innerHTML=messages.map((m,i)=>{
+    const waMsg=encodeURIComponent(m.text);
+    const phone=m.contact.phone;
+    return`<div class="msg-card fade-in" style="animation-delay:${i*0.05}s">
+      <div class="msg-card-name">${m.contact.name}</div>
+      <div class="msg-text" id="msg-${i}">${m.text}</div>
+      <div class="msg-actions">
+        ${phone?`<a class="wa-btn" href="https://wa.me/${phone}?text=${waMsg}" target="_blank">📲 Send WhatsApp</a>`:'<span style="font-size:11px;color:var(--muted)">No phone number</span>'}
+        <button class="copy-btn" onclick="copyMsg(${i})">📋 Copy</button>
+      </div>
+    </div>`;
+  }).join('');
+  // window.msgTexts for send-all
+  window.msgTexts=messages;
+}
+
+function copyMsg(i){
+  navigator.clipboard.writeText(document.getElementById('msg-'+i).textContent);
+  showToast('Copied ✓');
+}
+function sendAllWhatsApp(){
+  if(!window.msgTexts)return;
+  window.msgTexts.forEach((m,i)=>{
+    if(m.contact.phone){
+      setTimeout(()=>window.open(`https://wa.me/${m.contact.phone}?text=${encodeURIComponent(m.text)}`,'_blank'),i*600);
+    }
+  });
+}
+
+// ── AI DAILY BRIEF ────────────────────────────────────────────────────────────
+async function generateDailyBrief(){
+  const curMonth=months[months.length-1]||'';
+  const mRows=sessions.filter(r=>f(r,'Month','month').trim()===curMonth);
+  const totalRev=mRows.reduce((s,r)=>s+n(f(r,'Total Rev.','Total Rev','Total Revenue')),0);
+  const practs=[...new Set(mRows.map(r=>f(r,'Practitioner','practitioner')).filter(Boolean))];
+  let owedSummary='';
+  practs.forEach(name=>{const b=calcBalance(name,curMonth);if(b.netOwed>0)owedSummary+=`${name}: ${fmt(b.netOwed)} owed. `;});
+  const inactive=contacts.filter(c=>{
+    if(!c.lastSeen)return false;
+    const d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));
+    return !isNaN(d)&&(new Date()-d)/(1000*60*60*24)>=21;
+  });
+  const briefData={totalSessions:sessions.length,currentMonth:curMonth,monthRevenue:fmt(totalRev),monthSessions:mRows.length,totalContacts:contacts.length,inactiveClients:inactive.length,owedSummary:owedSummary||'All payouts up to date.',recentSessions:sessions.slice(-3).map(r=>`${f(r,'Date','date')}: ${f(r,'Type','type')} with ${f(r,'Practitioner','practitioner')} (${f(r,'Attendees','attendees')} attendees)`).join('; ')};
+  const system=`You are the AI assistant for ${studioName}, a Nairobi wellness studio. Write a warm, insightful daily brief for ${adminName} in 3–4 short paragraphs. Be specific, actionable, and human. Address them by name. Include: key financial insight, who needs follow-up, one positive observation, one action item for today. Write in plain text — no markdown headers or bullet points.`;
+  const prompt=`Today's studio snapshot: ${JSON.stringify(briefData)}. Inactive clients needing follow-up: ${inactive.map(c=>c.name).join(', ')||'none'}. Generate a daily brief.`;
+  try{
+    const res=await callClaude(system,prompt,500);
+    const paras=res.split('\n').filter(p=>p.trim());
+    const title=`Good ${getTimeOfDay()}, ${adminName} ✦`;
+    const content=paras.map(p=>`<p>${p}</p>`).join('');
+    showBrief(title,content);
+    localStorage.setItem('spark_brief_text',JSON.stringify({title,content}));
+  }catch(e){
+    showBrief(`Good ${getTimeOfDay()}, ${adminName}`,`<p>Studio data loaded. ${sessions.length} sessions across ${months.length} months. Current month revenue: ${fmt(mRows.reduce((s,r)=>s+n(f(r,'Total Rev.','Total Rev','Total Revenue')),0))}.</p>`);
+  }
+}
+
+function showBrief(title,content){
+  document.getElementById('brief-title').textContent=title;
+  document.getElementById('brief-content').innerHTML=content;
+}
+function getTimeOfDay(){const h=new Date().getHours();return h<12?'morning':h<17?'afternoon':'evening';}
+
+// ── AI CHAT ───────────────────────────────────────────────────────────────────
+function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();if(!text)return;
+  input.value='';input.style.height='auto';
+  appendMsg(text,'user');
+  document.getElementById('chat-send').disabled=true;
+  const curMonth=months[months.length-1]||'';
+  const mRows=sessions.filter(r=>f(r,'Month','month').trim()===curMonth);
+  const totalRev=mRows.reduce((s,r)=>s+n(f(r,'Total Rev.','Total Rev','Total Revenue')),0);
+  const inactive=contacts.filter(c=>{if(!c.lastSeen)return false;const d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));return!isNaN(d)&&(new Date()-d)/(1000*60*60*24)>=21;});
+  const ctx={studioName,adminName,totalSessions:sessions.length,months,currentMonth:curMonth,monthRevenue:fmt(totalRev),monthSessions:mRows.length,contacts:contacts.map(c=>({name:c.name,phone:c.phone,email:c.email,sessions:c.sessions,lastSeen:c.lastSeen,notes:c.notes})),inactiveClients:inactive.map(c=>c.name),recentSessions:sessions.slice(-10).map(r=>({date:f(r,'Date','date'),type:f(r,'Type','type')||f(r,'Session Name','Session','session'),practitioner:f(r,'Practitioner','practitioner'),attendees:f(r,'Attendees','attendees'),revenue:f(r,'Total Rev.','Total Rev','Total Revenue'),month:f(r,'Month','month')}))};
+  const system=`You are the AI assistant for ${studioName}, a Nairobi wellness studio. You have full access to studio data. Answer questions helpfully and specifically using the data provided. For content creation requests, write the full content. Keep responses concise and actionable. Format lists with line breaks, not markdown symbols.`;
+  const loadingEl=appendMsg('Thinking...','ai');
+  try{
+    const res=await callClaude(system,`Studio context: ${JSON.stringify(ctx)}\n\nQuestion: ${text}`,800);
+    loadingEl.innerHTML=res.split('\n').filter(p=>p.trim()).map(p=>`<p>${p}</p>`).join('');
+  }catch(e){loadingEl.innerHTML=`<p>Sorry, there was an error: ${e.message}</p>`;}
+  document.getElementById('chat-send').disabled=false;
+  document.getElementById('chat-msgs').scrollTop=9999;
+}
+
+function appendMsg(text,role){
+  const el=document.createElement('div');
+  el.className=`msg-${role} fade-in`;
+  el.innerHTML=`<p>${text}</p>`;
+  document.getElementById('chat-msgs').appendChild(el);
+  document.getElementById('chat-msgs').scrollTop=9999;
+  return el;
+}
+
+// ── CLAUDE API ────────────────────────────────────────────────────────────────
+async function callClaude(system,userMsg,maxTokens=500){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,system,messages:[{role:'user',content:userMsg}]})
+  });
+  if(!res.ok){const err=await res.json();throw new Error(err.error?.message||`API error ${res.status}`);}
+  const data=await res.json();
+  return data.content[0].text;
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function openSettings(){
+  document.getElementById('s-apikey').value=apiKey;
+  document.getElementById('s-name').value=adminName;
+  document.getElementById('s-studio').value=studioName;
+  document.getElementById('s-waphone').value=studioPhone;
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettingsModal(){document.getElementById('settings-modal').classList.remove('open');}
+function saveSettingsModal(){
+  const key=document.getElementById('s-apikey').value.trim();
+  const name=document.getElementById('s-name').value.trim();
+  const studio=document.getElementById('s-studio').value.trim();
+  const phone=document.getElementById('s-waphone').value.trim();
+  if(key)localStorage.setItem('spark_apikey',key),apiKey=key;
+  if(name)localStorage.setItem('spark_admin_name',name),adminName=name;
+  if(studio)localStorage.setItem('spark_studio_name',studio),studioName=studio;
+  if(phone)localStorage.setItem('spark_wa_phone',phone),studioPhone=phone;
+  closeSettingsModal();showToast('Settings saved ✓');
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(id){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(b=>{if(b.textContent.toLowerCase().includes(id.slice(0,3)))b.classList.add('active');});
+  if(id==='contacts')renderContactsTable();
+  if(id==='broadcast')renderAudienceList();
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+function setStatus(type,text){
+  const dot=document.getElementById('sdot');
+  dot.className='sdot';
+  if(type==='live')dot.classList.add('live');
+  if(type==='err')dot.classList.add('err');
+  if(type==='loading')dot.classList.add('loading');
+  document.getElementById('stxt').textContent=text;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
