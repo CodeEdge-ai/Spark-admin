@@ -27,8 +27,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .setup-logo{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:var(--white);margin-bottom:6px}
 .setup-logo em{font-style:italic;color:var(--emerald)}
 .setup-sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.6}
-.setup-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:block}
-.setup-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--white);outline:none;margin-bottom:14px;transition:border-color .2s}
+.setup-label{font-family:monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:block}
+.setup-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:monospace;font-size:13px;color:var(--white);outline:none;margin-bottom:14px;transition:border-color .2s}
 .setup-input:focus{border-color:var(--emerald)}
 .setup-input::placeholder{color:var(--muted2)}
 .setup-btn{width:100%;background:var(--emerald);color:#050d08;border:none;border-radius:10px;padding:13px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
@@ -51,8 +51,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .sdot.err{background:var(--red)}
 .sdot.loading{background:var(--gold);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.status-txt{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
-.icon-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s}
+.status-txt{font-family:monospace;font-size:10px;color:var(--muted)}
+.icon-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:monospace;transition:all .2s}
 .icon-btn:hover{color:var(--white);border-color:var(--emerald)}
 
 /* CONTENT */
@@ -67,7 +67,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .bnav-btn.active{color:var(--emerald)}
 .bnav-btn.active .bnav-icon{transform:scale(1.1)}
 .bnav-icon{font-size:18px;line-height:1;transition:transform .18s}
-.bnav-label{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-family:'DM Mono',monospace}
+.bnav-label{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-family:monospace}
 .bnav-badge{position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--red);border-radius:50%;border:1px solid var(--bg)}
 
 /* STAT GRID */
@@ -75,7 +75,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;position:relative;overflow:hidden;transition:border-color .25s,transform .2s}
 .stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
 .stat-icon{font-size:18px;margin-bottom:8px}
-.stat-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.stat-label{font-family:monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .stat-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--white);line-height:1}
 .stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
 
@@ -83,46 +83,46 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
 .panel-head{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .panel-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;color:var(--white);letter-spacing:.02em}
-.panel-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:3px 9px;border-radius:100px;white-space:nowrap}
+.panel-badge{font-family:monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:3px 9px;border-radius:100px;white-space:nowrap}
 .panel-body{padding:14px 16px}
 
 /* AI BRIEF */
 .ai-brief{background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(96,165,250,.04));border:1px solid rgba(74,222,128,.18);border-radius:var(--radius);padding:18px;margin-bottom:16px;position:relative}
 .ai-brief::before{content:'✦';position:absolute;top:14px;right:16px;font-size:26px;color:rgba(74,222,128,.15)}
-.ai-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:6px}
+.ai-eyebrow{font-family:monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);margin-bottom:6px}
 .ai-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--white);margin-bottom:8px}
 .ai-content{font-size:13px;color:rgba(238,242,240,.8);line-height:1.75}
 .ai-content p{margin-bottom:8px}
 .ai-content p:last-child{margin-bottom:0}
-.ai-loading{display:flex;align-items:center;gap:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.ai-loading{display:flex;align-items:center;gap:10px;font-family:monospace;font-size:11px;color:var(--muted)}
 .spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--emerald);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* BROADCAST ALERT */
 .bcast-alert{background:linear-gradient(135deg,rgba(251,146,60,.08),rgba(240,192,64,.06));border:1px solid rgba(251,146,60,.3);border-radius:var(--radius);padding:16px;margin-bottom:16px}
 .bcast-alert-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.bcast-alert-title{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--orange)}
+.bcast-alert-title{font-family:monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--orange)}
 .bcast-session{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .bcast-session:last-child{border-bottom:none;padding-bottom:0}
 .bcast-sess-info{flex:1}
 .bcast-sess-name{font-size:13px;font-weight:600;color:var(--white)}
 .bcast-sess-meta{font-size:11px;color:var(--muted);margin-top:2px}
-.send-now-btn{background:var(--orange);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap}
+.send-now-btn{background:var(--orange);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:monospace;white-space:nowrap}
 
 /* RSVP */
 .upcoming-session{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;transition:border-color .2s}
 .upcoming-session:hover{border-color:var(--border2)}
 .us-header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
 .us-name{font-size:14px;font-weight:600;color:var(--white)}
-.us-date{font-family:'DM Mono',monospace;font-size:12px;color:var(--emerald)}
+.us-date{font-family:monospace;font-size:12px;color:var(--emerald)}
 .us-meta{font-size:12px;color:var(--muted);margin-top:2px}
 .us-actions{display:flex;gap:6px;flex-wrap:wrap}
 .rsvp-list{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px}
-.rsvp-chip{display:inline-flex;align-items:center;gap:5px;background:var(--eglow);border:1px solid rgba(74,222,128,.2);border-radius:100px;padding:3px 10px;font-size:11px;color:var(--emerald);font-family:'DM Mono',monospace}
+.rsvp-chip{display:inline-flex;align-items:center;gap:5px;background:var(--eglow);border:1px solid rgba(74,222,128,.2);border-radius:100px;padding:3px 10px;font-size:11px;color:var(--emerald);font-family:monospace}
 .rsvp-chip.pending{background:var(--gglow);border-color:rgba(240,192,64,.25);color:var(--gold)}
 .rsvp-chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:10px;opacity:.7;padding:0 2px}
 .rsvp-chip button:hover{opacity:1}
-.days-badge{padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace}
+.days-badge{padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;font-family:monospace}
 .days-badge.urgent{background:rgba(248,113,113,.15);color:var(--red)}
 .days-badge.soon{background:rgba(251,146,60,.15);color:var(--orange)}
 .days-badge.normal{background:var(--eglow);color:var(--emerald)}
@@ -144,21 +144,21 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* CONTACT TABLE */
 .ctable{width:100%;border-collapse:collapse}
-.ctable th{text-align:left;padding:9px 12px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500}
+.ctable th{text-align:left;padding:9px 12px;font-family:monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500}
 .ctable td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
 .ctable tr:last-child td{border-bottom:none}
 .ctable tr:hover td{background:rgba(255,255,255,.02)}
 .ctable input[type=checkbox]{accent-color:var(--emerald);width:14px;height:14px;cursor:pointer}
-.avatar{width:28px;height:28px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--emerald);font-family:'DM Mono',monospace;flex-shrink:0}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--emerald);font-family:monospace;flex-shrink:0}
 .name-cell{display:flex;align-items:center;gap:8px}
 .contact-name{font-weight:500;color:var(--white)}
 .contact-meta{font-size:11px;color:var(--muted);margin-top:1px}
-.session-tag{display:inline-block;background:var(--eglow);border:1px solid rgba(74,222,128,.2);border-radius:100px;padding:2px 7px;font-size:10px;color:var(--emerald);font-family:'DM Mono',monospace;margin:1px;white-space:nowrap}
-.mono{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.session-tag{display:inline-block;background:var(--eglow);border:1px solid rgba(74,222,128,.2);border-radius:100px;padding:2px 7px;font-size:10px;color:var(--emerald);font-family:monospace;margin:1px;white-space:nowrap}
+.mono{font-family:monospace;font-size:11px;color:var(--muted)}
 .action-cell{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.wa-btn{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);border-radius:6px;padding:4px 8px;font-size:10px;font-weight:600;color:#25d366;cursor:pointer;text-decoration:none;font-family:'DM Mono',monospace;white-space:nowrap;display:inline-block}
-.em-btn{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);border-radius:6px;padding:4px 8px;font-size:10px;font-weight:600;color:var(--blue);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap;text-decoration:none;display:inline-block}
-.edit-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace}
+.wa-btn{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);border-radius:6px;padding:4px 8px;font-size:10px;font-weight:600;color:#25d366;cursor:pointer;text-decoration:none;font-family:monospace;white-space:nowrap;display:inline-block}
+.em-btn{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);border-radius:6px;padding:4px 8px;font-size:10px;font-weight:600;color:var(--blue);cursor:pointer;font-family:monospace;white-space:nowrap;text-decoration:none;display:inline-block}
+.edit-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:10px;color:var(--muted);cursor:pointer;font-family:monospace}
 .edit-btn:hover{color:var(--white)}
 
 /* BROADCAST */
@@ -170,10 +170,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .audience-name{font-size:13px;font-weight:500;color:var(--white)}
 .audience-meta{font-size:11px;color:var(--muted)}
 .msg-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:13px;margin-bottom:9px;position:relative}
-.msg-card-name{font-size:11px;font-weight:600;color:var(--emerald);margin-bottom:5px;font-family:'DM Mono',monospace}
-.msg-text{font-size:12px;color:var(--white);line-height:1.6;white-space:pre-wrap;font-family:'DM Mono',monospace}
+.msg-card-name{font-size:11px;font-weight:600;color:var(--emerald);margin-bottom:5px;font-family:monospace}
+.msg-text{font-size:12px;color:var(--white);line-height:1.6;white-space:pre-wrap;font-family:monospace}
 .msg-actions{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
-.copy-btn{background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;font-size:10px;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace}
+.copy-btn{background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;font-size:10px;color:var(--muted);cursor:pointer;font-family:monospace}
 .copy-btn:hover{color:var(--white)}
 
 /* REPORTS */
@@ -188,12 +188,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 /* SESSIONS LIST */
 .sess-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
 .sess-row:last-child{border-bottom:none}
-.sess-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);min-width:86px}
+.sess-date{font-family:monospace;font-size:11px;color:var(--muted);min-width:86px}
 .sess-info{flex:1}
 .sess-name{font-size:13px;font-weight:500;color:var(--white)}
 .sess-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .sess-rev{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--white)}
-.pill{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600;font-family:'DM Mono',monospace}
+.pill{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600;font-family:monospace}
 .pill-green{background:var(--eglow);color:var(--emerald)}
 .pill-gold{background:var(--gglow);color:var(--gold)}
 .pill-blue{background:rgba(96,165,250,.12);color:var(--blue)}
@@ -223,7 +223,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 6px}
 .modal-body{padding:20px}
 .form-group{margin-bottom:14px}
-.form-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
+.form-label{font-family:monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
 .form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--white);outline:none;transition:border-color .2s}
 .form-input:focus{border-color:var(--emerald)}
 .form-input::placeholder{color:var(--muted2)}
@@ -241,8 +241,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .follow-row:last-child{border-bottom:none}
 .follow-name{flex:1;font-weight:500;color:var(--white)}
 .follow-meta{font-size:11px;color:var(--muted)}
-.follow-reason{font-size:10px;background:var(--gglow);border:1px solid rgba(240,192,64,.2);border-radius:6px;padding:2px 7px;color:var(--gold);font-family:'DM Mono',monospace}
-.toast{position:fixed;bottom:76px;right:16px;background:var(--surface);border:1px solid var(--emerald);border-radius:10px;padding:11px 16px;font-size:12px;color:var(--white);z-index:1000;box-shadow:var(--shadow);transform:translateY(80px);opacity:0;transition:all .3s;font-family:'DM Mono',monospace}
+.follow-reason{font-size:10px;background:var(--gglow);border:1px solid rgba(240,192,64,.2);border-radius:6px;padding:2px 7px;color:var(--gold);font-family:monospace}
+.toast{position:fixed;bottom:76px;right:16px;background:var(--surface);border:1px solid var(--emerald);border-radius:10px;padding:11px 16px;font-size:12px;color:var(--white);z-index:1000;box-shadow:var(--shadow);transform:translateY(80px);opacity:0;transition:all .3s;font-family:monospace}
 .toast.show{transform:translateY(0);opacity:1}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .35s ease both}
@@ -340,12 +340,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <!-- RSVP -->
     <div class="tab-pane" id="tab-rsvp">
       <div class="section-title">RSVP Tracker</div>
-      <div class="section-sub">Upcoming sessions from Enso. Add attendees as they confirm via WhatsApp.</div>
+      <div class="section-sub">Add upcoming sessions manually. Track who's confirmed for each one.</div>
       <div class="toolbar">
-        <div class="panel-badge" id="enso-status">Loading from Enso...</div>
-        <button class="btn btn-ghost btn-sm" onclick="loadEnsoSessions()">↻ Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddSession()">+ Add Session</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateWeek(0)">📅 This Week</button>
+        <button class="btn btn-ghost btn-sm" onclick="generateWeek(1)">📅 Next Week</button>
+        <a class="panel-badge" href="https://www.ensokenya.com/enso-spark" target="_blank" style="cursor:pointer;text-decoration:none">🔗 Enso</a>
+        <div class="panel-badge" id="rsvp-total">0 sessions</div>
       </div>
-      <div id="rsvp-sessions-list"><div class="ai-loading"><div class="spinner"></div><span>Fetching sessions from ensokenya.com...</span></div></div>
+      <div id="rsvp-sessions-list"><div class="empty"><div class="empty-icon">📋</div>No sessions added yet. Tap <strong>+ Add Session</strong> to add your next upcoming session.</div></div>
     </div>
 
     <!-- CONTACTS -->
@@ -527,6 +530,50 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
 </div>
 
+<!-- ADD SESSION MODAL -->
+<div class="modal-overlay" id="add-session-modal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="add-sess-title">Add Session</div><button class="modal-close" onclick="closeAddSession()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-session-id">
+      <div class="form-group"><label class="form-label">Session Template</label>
+        <select class="form-input" id="ns-template" onchange="fillTemplate()">
+          <option value="">— Custom / Manual Entry —</option>
+          <option value="kundalini">Kundalini Yoga · Lut · Mon 5:15 PM · KES 888</option>
+          <option value="jiujitsu_mon">Jiu Jitsu · Davis · Mon 6:30 PM · KES 999</option>
+          <option value="breathwork">Breathwork · Vincent · Tue 6:30 PM · KES 888</option>
+          <option value="hatha">Hatha Kriya Yoga · Danny · Wed 6:30 PM · KES 888</option>
+          <option value="jiujitsu_thu">Jiu Jitsu · Davis · Thu 6:30 PM · KES 999</option>
+          <option value="sound">Sound Meditation · Anastancia · Sat 4:30 PM · KES 888</option>
+          <option value="vinyasa">Vinyasa Flow Yoga · Alex · Sun 10:00 AM · KES 888</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Session Type *</label>
+        <input class="form-input" id="ns-type" placeholder="e.g. Sound Meditation">
+      </div>
+      <div class="form-group"><label class="form-label">Date *</label>
+        <input class="form-input" id="ns-date" type="date">
+      </div>
+      <div class="form-group"><label class="form-label">Time</label>
+        <input class="form-input" id="ns-time" type="time">
+      </div>
+      <div class="form-group"><label class="form-label">Practitioner</label>
+        <input class="form-input" id="ns-pract" placeholder="e.g. Anastancia">
+      </div>
+      <div class="form-group"><label class="form-label">Price (KES)</label>
+        <input class="form-input" id="ns-price" type="number" placeholder="888">
+      </div>
+      <div class="form-group"><label class="form-label">Booking URL</label>
+        <input class="form-input" id="ns-url" placeholder="https://www.ensokenya.com/enso-spark">
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-ghost" onclick="closeAddSession()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSession()">Save Session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- RSVP ADD MODAL -->
 <div class="modal-overlay" id="rsvp-modal">
   <div class="modal">
@@ -683,102 +730,243 @@ async function syncAll(){
 }
 
 // ── PARSE ENSO PAGE ────────────────────────────────────────────────────────
-async function loadEnsoSessions(){
-  document.getElementById('enso-status').textContent='Fetching from Enso...';
-  document.getElementById('rsvp-sessions-list').innerHTML=`<div class="ai-loading"><div class="spinner"></div><span>Connecting to ensokenya.com...</span></div>`;
-  try{
-    const html=await fetchURL(ENSO_URL);
-    ensoSessions=parseEnsoHTML(html);
-    document.getElementById('enso-status').textContent=`${ensoSessions.length} sessions found`;
-    renderRsvpTab();
-    // Update RSVP badge
-    const upcoming=ensoSessions.filter(s=>daysUntil(s.date)>=0&&daysUntil(s.date)<=7);
-    if(upcoming.length){document.getElementById('rsvp-badge').style.display='block';}
-  }catch(e){
-    document.getElementById('enso-status').textContent='Could not reach Enso';
-    document.getElementById('rsvp-sessions-list').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div>Could not load Enso sessions. Check your connection and tap Refresh.</div>`;
-  }
+// Session management — manual entry stored in localStorage
+// (ensoSessions declared in STATE section above, loaded from storage here)
+
+// ── WEEKLY SCHEDULE TEMPLATE ──────────────────────────────────────────────
+// Full recurring schedule from SPARK by EN-SO weekly calendar
+const WEEKLY_SCHEDULE = [
+  {key:'kundalini',    dow:1, time:'17:15', name:'Kundalini Yoga',    practitioner:'Lut',       price:888, url:'https://www.ensokenya.com/enso-spark'},
+  {key:'jiujitsu_mon',dow:1, time:'18:30', name:'Jiu Jitsu',          practitioner:'Davis',     price:999, url:'https://www.ensokenya.com/enso-spark'},
+  {key:'breathwork',  dow:2, time:'18:30', name:'Breathwork',         practitioner:'Vincent',   price:888, url:'https://www.ensokenya.com/enso-spark'},
+  {key:'hatha',       dow:3, time:'18:30', name:'Hatha Kriya Yoga',   practitioner:'Danny',     price:888, url:'https://www.ensokenya.com/enso-spark'},
+  {key:'jiujitsu_thu',dow:4, time:'18:30', name:'Jiu Jitsu',          practitioner:'Davis',     price:999, url:'https://www.ensokenya.com/enso-spark'},
+  {key:'sound',       dow:6, time:'16:30', name:'Sound Meditation',   practitioner:'Anastancia',price:888, url:'https://www.ensokenya.com/enso-spark'},
+  {key:'vinyasa',     dow:0, time:'10:00', name:'Vinyasa Flow Yoga',  practitioner:'Alex',      price:888, url:'https://www.ensokenya.com/enso-spark'},
+];
+
+// Template fill on dropdown change
+function fillTemplate(){
+  const key = document.getElementById('ns-template').value;
+  const t = WEEKLY_SCHEDULE.find(s=>s.key===key);
+  if(!t)return;
+  document.getElementById('ns-type').value  = t.name;
+  document.getElementById('ns-time').value  = t.time;
+  document.getElementById('ns-pract').value = t.practitioner;
+  document.getElementById('ns-price').value = t.price;
+  document.getElementById('ns-url').value   = t.url;
+  // Set date to the next occurrence of this day of week
+  const today=new Date();
+  const diff=(t.dow - today.getDay() + 7)%7 || 7;
+  const next=new Date(today);
+  next.setDate(today.getDate()+diff);
+  document.getElementById('ns-date').value = next.toISOString().split('T')[0];
 }
 
-function parseEnsoHTML(html){
-  const sessions=[];
-  // Extract event links and data from Wix HTML
-  const eventPattern=/href="(https:\/\/www\.ensokenya\.com\/event-details\/([^"]+))"/g;
-  const seen=new Set();
-  let m;
-  while((m=eventPattern.exec(html))!==null){
-    const url=m[1], slug=m[2];
-    if(seen.has(slug))continue;
-    seen.add(slug);
-    // Parse date from slug e.g. sound-meditation-2026-03-21-16-30
-    const dateMatch=slug.match(/(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})$/);
-    // Parse session name from slug
-    const namePart=dateMatch?slug.replace(/-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}$/,''):slug;
-    const name=namePart.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
-    let date=null, time=null;
-    if(dateMatch){
-      date=new Date(`${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}T${dateMatch[4]}:${dateMatch[5]}:00`);
-      time=`${dateMatch[4]}:${dateMatch[5]}`;
+// Generate all sessions for a given week offset (0=this week, 1=next week)
+function generateWeek(weekOffset){
+  const today = new Date();
+  // Find the Monday of the target week
+  const monday = new Date(today);
+  const dayOfWeek = today.getDay();
+  const daysToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek) + (weekOffset * 7);
+  monday.setDate(today.getDate() + daysToMonday);
+  monday.setHours(0,0,0,0);
+
+  let added = 0;
+  WEEKLY_SCHEDULE.forEach(t => {
+    // Find the date for this day of week in the target week
+    const sessionDate = new Date(monday);
+    // dow: 0=Sun,1=Mon,...,6=Sat. Monday of week + offset
+    const offset = t.dow === 0 ? 6 : t.dow - 1; // Mon=0, Tue=1... Sun=6
+    sessionDate.setDate(monday.getDate() + offset);
+
+    // Skip if date is in the past
+    if(sessionDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())){
+      return;
     }
-    // Only include future or recent sessions
-    if(date&&date>=new Date(Date.now()-24*60*60*1000)){
-      sessions.push({id:slug,name,url,date,time,dateStr:date?date.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}):''});
-    }
-  }
-  return sessions.sort((a,b)=>a.date-b.date);
+
+    // Check if already added
+    const dateStr = sessionDate.toISOString().split('T')[0];
+    const exists = ensoSessions.find(s=>{
+      const sd = new Date(s.date);
+      return sd.toISOString().split('T')[0]===dateStr && s.name===t.name;
+    });
+    if(exists) return;
+
+    const fullDate = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate(),
+      parseInt(t.time.split(':')[0]), parseInt(t.time.split(':')[1]));
+    const dateStrFmt = fullDate.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+    ensoSessions.push({
+      id: 'sess-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),
+      name: t.name,
+      date: fullDate,
+      dateStr: dateStrFmt,
+      time: t.time,
+      practitioner: t.practitioner,
+      price: t.price,
+      url: t.url
+    });
+    added++;
+  });
+
+  ensoSessions.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  localStorage.setItem('spark_upcoming_sessions', JSON.stringify(ensoSessions));
+  renderRsvpTab();
+  renderUpcomingMini();
+  checkAutoScheduled();
+  showToast(added > 0 ? added+' sessions added ✓' : 'Sessions already exist for this week');
 }
+
+function loadEnsoSessions(){
+  ensoSessions = JSON.parse(localStorage.getItem('spark_upcoming_sessions')||'[]');
+  // Restore Date objects from JSON strings
+  ensoSessions = ensoSessions.map(s=>({...s, date: new Date(s.date)}));
+  renderRsvpTab();
+}
+
+function openAddSession(){
+  document.getElementById('add-sess-title').textContent='Add Session';
+  document.getElementById('edit-session-id').value='';
+  document.getElementById('ns-template').value='';
+  document.getElementById('ns-type').value='';
+  document.getElementById('ns-date').value='';
+  document.getElementById('ns-time').value='';
+  document.getElementById('ns-pract').value='';
+  document.getElementById('ns-price').value='888';
+  document.getElementById('ns-url').value='';
+  document.getElementById('add-session-modal').classList.add('open');
+}
+
+function openEditSession(id){
+  const s=ensoSessions.find(x=>x.id===id);if(!s)return;
+  document.getElementById('add-sess-title').textContent='Edit Session';
+  document.getElementById('edit-session-id').value=id;
+  document.getElementById('ns-type').value=s.name;
+  // Set date input from dateStr
+  if(s.date){
+    try{const d=new Date(s.date);document.getElementById('ns-date').value=d.toISOString().split('T')[0];}catch(e){}
+  }
+  document.getElementById('ns-time').value=s.time||'';
+  document.getElementById('ns-pract').value=s.practitioner||'';
+  document.getElementById('ns-price').value=s.price||888;
+  document.getElementById('ns-url').value=s.url||'';
+  document.getElementById('ns-template').value='';
+  document.getElementById('add-session-modal').classList.add('open');
+}
+
+function closeAddSession(){document.getElementById('add-session-modal').classList.remove('open');}
+
+function saveSession(){
+  const type=document.getElementById('ns-type').value.trim();
+  const dateVal=document.getElementById('ns-date').value;
+  const time=document.getElementById('ns-time').value;
+  const pract=document.getElementById('ns-pract').value.trim();
+  const price=parseInt(document.getElementById('ns-price').value)||888;
+  const url=document.getElementById('ns-url').value.trim();
+  if(!type){showToast('Enter a session type');return;}
+  if(!dateVal){showToast('Please select a date');return;}
+  const date=new Date(dateVal+'T'+(time||'00:00')+':00');
+  const dateStr=date.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const editId=document.getElementById('edit-session-id').value;
+  if(editId){
+    const s=ensoSessions.find(x=>x.id===editId);
+    if(s)Object.assign(s,{name:type,date,dateStr,time,practitioner:pract,price,url:url||'https://www.ensokenya.com/enso-spark'});
+  }else{
+    const id='sess-'+Date.now();
+    ensoSessions.push({id,name:type,date,dateStr,time,practitioner:pract,price,url:url||'https://www.ensokenya.com/enso-spark'});
+  }
+  ensoSessions.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));
+  closeAddSession();
+  renderRsvpTab();
+  renderUpcomingMini();
+  checkAutoScheduled();
+  showToast(editId?'Session updated ✓':'Session added ✓');
+}
+
+function deleteSession(id){
+  if(!confirm('Remove this session?'))return;
+  ensoSessions=ensoSessions.filter(s=>s.id!==id);
+  localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));
+  renderRsvpTab();renderUpcomingMini();showToast('Removed');
+}
+
+// parseEnsoHTML removed — sessions entered manually
 
 function daysUntil(date){
   if(!date)return 999;
   const now=new Date(); now.setHours(0,0,0,0);
-  const d=new Date(date); d.setHours(0,0,0,0);
+  const d=date instanceof Date ? new Date(date) : new Date(date);
+  if(isNaN(d))return 999;
+  d.setHours(0,0,0,0);
   return Math.round((d-now)/(1000*60*60*24));
 }
 
 // ── RSVP TAB ──────────────────────────────────────────────────────────────
 function renderRsvpTab(){
-  if(!ensoSessions.length){
-    document.getElementById('rsvp-sessions-list').innerHTML=`<div class="empty"><div class="empty-icon">📋</div>No upcoming sessions found.</div>`;
+  // Update contacts datalist
+  const dl=document.getElementById('contacts-datalist');
+  if(dl)dl.innerHTML=contacts.map(c=>`<option value="${c.name}">`).join('');
+
+  // Filter to only future/today sessions
+  const upcoming=ensoSessions.filter(s=>daysUntil(s.date)>=-1).slice(0,30);
+  const badge=document.getElementById('rsvp-total');
+  if(badge)badge.textContent=upcoming.length+' session'+(upcoming.length!==1?'s':'');
+
+  // RSVP badge on bottom nav
+  const hasSoon=upcoming.some(s=>daysUntil(s.date)<=2&&daysUntil(s.date)>=0);
+  const bnavBadge=document.getElementById('rsvp-badge');
+  if(bnavBadge)bnavBadge.style.display=hasSoon?'block':'none';
+
+  if(!upcoming.length){
+    document.getElementById('rsvp-sessions-list').innerHTML='<div class="empty"><div class="empty-icon">📋</div>No upcoming sessions. Tap <strong>+ Add Session</strong> to add your next one.<br><br><a href="https://www.ensokenya.com/enso-spark" target="_blank" style="color:var(--blue)">View Enso schedule →</a></div>';
     return;
   }
-  // Update contacts datalist
-  document.getElementById('contacts-datalist').innerHTML=contacts.map(c=>`<option value="${c.name}">`).join('');
 
-  document.getElementById('rsvp-sessions-list').innerHTML=ensoSessions.slice(0,20).map(s=>{
+  document.getElementById('rsvp-sessions-list').innerHTML=upcoming.map(s=>{
     const days=daysUntil(s.date);
     const rsvps=rsvpData[s.id]||[];
     const confirmed=rsvps.filter(r=>r.status==='confirmed');
     const pending=rsvps.filter(r=>r.status==='pending');
     let daysBadge='';
-    if(days===0)daysBadge=`<span class="days-badge urgent">TODAY</span>`;
-    else if(days===1)daysBadge=`<span class="days-badge urgent">TOMORROW</span>`;
-    else if(days<=3)daysBadge=`<span class="days-badge soon">${days} days</span>`;
-    else if(days<=7)daysBadge=`<span class="days-badge normal">${days} days</span>`;
-    else daysBadge=`<span class="days-badge normal">${days}d</span>`;
+    if(days===0)daysBadge='<span class="days-badge urgent">TODAY</span>';
+    else if(days===1)daysBadge='<span class="days-badge urgent">TOMORROW</span>';
+    else if(days<=3)daysBadge='<span class="days-badge soon">'+days+' days</span>';
+    else if(days<=7)daysBadge='<span class="days-badge normal">'+days+' days</span>';
+    else daysBadge='<span class="days-badge normal">'+days+'d</span>';
 
+    const sid=s.id;
     const rsvpChips=[
-      ...confirmed.map(r=>`<span class="rsvp-chip">✓ ${r.name}<button onclick="removeRsvp('${s.id}','${r.name}')">✕</button></span>`),
-      ...pending.map(r=>`<span class="rsvp-chip pending">⏳ ${r.name}<button onclick="removeRsvp('${s.id}','${r.name}')">✕</button></span>`)
+      ...confirmed.map(r=>{const n=r.name.replace(/'/g,"&#39;");return '<span class="rsvp-chip">✓ '+r.name+'<button onclick="removeRsvp(\'' +sid+ '\',\'' +n+ '\')">✕</button></span>';}),
+      ...pending.map(r=>{const n=r.name.replace(/'/g,"&#39;");return '<span class="rsvp-chip pending">⏳ '+r.name+'<button onclick="removeRsvp(\'' +sid+ '\',\'' +n+ '\')">✕</button></span>';})
     ].join('');
 
-    return`<div class="upcoming-session" id="sess-${s.id}">
-      <div class="us-header">
-        <div>
-          <div class="us-name">${s.name}</div>
-          <div class="us-meta">📅 ${s.dateStr} ${s.time?'· '+s.time:''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${daysBadge}
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--emerald)">${confirmed.length} confirmed</span>
-        </div>
-      </div>
-      <div class="us-actions">
-        <button class="btn btn-primary btn-sm" onclick="openRsvpModal('${s.id}')">+ Add Attendee</button>
-        <a class="btn btn-ghost btn-sm" href="${s.url}" target="_blank">🔗 Booking Page</a>
-        ${days<=2?`<button class="btn btn-orange btn-sm" onclick="broadcastSession('${s.id}')">📲 Send Reminders</button>`:''}
-      </div>
-      ${rsvps.length?`<div class="rsvp-list">${rsvpChips}</div>`:''}
-    </div>`;
+    const practLine=s.practitioner?(' · with '+s.practitioner):'';
+    const timeLine=s.time?(' · '+s.time):'';
+    const priceLine=s.price?(' · KES '+s.price):'';
+
+    return '<div class="upcoming-session" id="sess-'+s.id+'">'
+      +'<div class="us-header">'
+        +'<div>'
+          +'<div class="us-name">'+s.name+'</div>'
+          +'<div class="us-meta">📅 '+s.dateStr+timeLine+practLine+priceLine+'</div>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:6px">'
+          +daysBadge
+          +'<span style="font-family:monospace;font-size:11px;color:var(--emerald)">'+confirmed.length+' confirmed</span>'
+        +'</div>'
+      +'</div>'
+      +'<div class="us-actions">'
+        +'<button class="btn btn-primary btn-sm" onclick="openRsvpModal(this.dataset.id)" data-id="'+sid+'">+ Attendee</button>'
+        +(s.url?'<a class="btn btn-ghost btn-sm" href="'+s.url+'" target="_blank">🔗 Book</a>':'')
+        +(days<=2?'<button class="btn btn-orange btn-sm" onclick="broadcastSession(this.dataset.id)" data-id="'+sid+'">📲 Remind</button>':'')
+        +'<button class="edit-btn" onclick="openEditSession(this.dataset.id)" data-id="'+sid+'" style="padding:5px 9px">✏</button>'
+        +'<button class="edit-btn" onclick="deleteSession(this.dataset.id)" data-id="'+sid+'" style="padding:5px 9px;color:var(--red)">✕</button>'
+      +'</div>'
+      +(rsvps.length?'<div class="rsvp-list">'+rsvpChips+'</div>':'')
+    +'</div>';
   }).join('');
 }
 
@@ -981,22 +1169,27 @@ function renderFollowUp(){
 }
 
 function renderUpcomingMini(){
-  const upcoming=ensoSessions.filter(s=>daysUntil(s.date)>=0).slice(0,4);
-  document.getElementById('upcoming-badge').textContent=upcoming.length?`${upcoming.length} upcoming`:'loading...';
-  if(!upcoming.length){document.getElementById('upcoming-mini').innerHTML=`<div class="empty" style="padding:16px">Loading from Enso...</div>`;return;}
+  const upcoming=ensoSessions.filter(s=>daysUntil(new Date(s.date))>=0).slice(0,4);
+  document.getElementById('upcoming-badge').textContent=upcoming.length?(upcoming.length+' upcoming'):'none added';
+  if(!upcoming.length){
+    document.getElementById('upcoming-mini').innerHTML='<div class="empty" style="padding:16px">No upcoming sessions. Add them in the RSVP tab.</div>';
+    return;
+  }
   document.getElementById('upcoming-mini').innerHTML=upcoming.map(s=>{
-    const days=daysUntil(s.date);
+    const days=daysUntil(new Date(s.date));
     const rsvpCount=(rsvpData[s.id]||[]).filter(r=>r.status==='confirmed').length;
-    return`<div class="sess-row">
-      <div class="sess-info">
-        <div class="sess-name" style="font-size:13px">${s.name}</div>
-        <div class="sess-meta">${s.dateStr}${s.time?' · '+s.time:''}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--emerald)">${rsvpCount} RSVP${rsvpCount!==1?'s':''}</div>
-        <span class="pill ${days<=1?'pill-red':days<=3?'pill-gold':'pill-green'}">${days===0?'TODAY':days===1?'TOMORROW':days+'d'}</span>
-      </div>
-    </div>`;
+    const pillCls=days<=1?'pill-red':days<=3?'pill-gold':'pill-green';
+    const dayTxt=days===0?'TODAY':days===1?'TOMORROW':days+'d';
+    return '<div class="sess-row">'
+      +'<div class="sess-info">'
+        +'<div class="sess-name" style="font-size:13px">'+s.name+'</div>'
+        +'<div class="sess-meta">'+s.dateStr+(s.time?' · '+s.time:'')+(s.practitioner?' · '+s.practitioner:'')+'</div>'
+      +'</div>'
+      +'<div style="text-align:right">'
+        +'<div style="font-family:monospace;font-size:11px;color:var(--emerald)">'+rsvpCount+' RSVP'+(rsvpCount!==1?'s':'')+'</div>'
+        +'<span class="pill '+pillCls+'">'+dayTxt+'</span>'
+      +'</div>'
+    +'</div>';
   }).join('');
 }
 
@@ -1135,7 +1328,7 @@ function renderReportsTab(){
     const colors={'Lut':'#4ade80','Alex':'#60a5fa','Vincent':'#a78bfa','Danny':'#f0c040','Anastancia':'#fb923c'};
     const col=colors[name]||'#4ade80';
     return`<div class="report-card">
-      <div class="report-icon" style="background:${col}22;font-size:16px;font-weight:700;color:${col};font-family:'DM Mono',monospace">${ini(name)}</div>
+      <div class="report-icon" style="background:${col}22;font-size:16px;font-weight:700;color:${col};font-family:monospace">${ini(name)}</div>
       <div class="report-info">
         <div class="report-name">${name}</div>
         <div class="report-desc">${allSess.length} sessions · ${fmt(totalRev)} all-time revenue</div>
