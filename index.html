@@ -1426,14 +1426,12 @@ async function callClaude(system, userMsg, maxTokens=500, model=MODEL_HAIKU){
 // Batch broadcast: generates ALL messages in ONE API call instead of one per contact
 async function callClaudeBatch(system, contacts_data, context, msgType){
   trackCall();
-  const prompt = `Write personalised WhatsApp messages for each of these ${contacts_data.length} clients. Return ONLY a JSON array like: [{"name":"...","message":"..."}]. No other text, no markdown.
-
-Message type: ${msgType}
-Context: ${context}
-
-Clients:
-${contacts_data.map((c,i)=>`${i+1}. Name: ${c.name}, Sessions attended: ${(c.sessions||[]).join(', ')||'various'}, Last seen: ${c.lastSeen||'unknown'}${c.rsvpStatus?' RSVP status: '+c.rsvpStatus:''}`).join('
-')}`;
+  const clientLines = contacts_data.map((c,i)=>{
+    const sessions = (c.sessions||[]).join(', ')||'various';
+    const rsvp = c.rsvpStatus ? ' RSVP: '+c.rsvpStatus : '';
+    return (i+1)+'. Name: '+c.name+', Sessions: '+sessions+', Last seen: '+(c.lastSeen||'unknown')+rsvp;
+  }).join('\n');
+  const prompt = 'Write personalised WhatsApp messages for '+contacts_data.length+' clients. Return ONLY a JSON array: [{"name":"...","message":"..."}]. No markdown, no extra text.\n\nMessage type: '+msgType+'\nContext: '+context+'\n\nClients:\n'+clientLines;
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
