@@ -1104,31 +1104,54 @@ async function broadcastSession(sessionId){
   showTab('broadcast');
   document.getElementById('broadcast-messages').innerHTML=`<div class="ai-loading"><div class="spinner"></div><span>Generating ${recipients.length} reminder messages...</span></div>`;
   document.getElementById('msg-context').value=`${session.name} — ${session.dateStr}${session.time?' at '+session.time:''} at Jaffery Sports Club Pavilion, Lavington. Book at ${session.url}`;
-  const msgs=[];
-  // Batch all reminder messages in ONE call
-  const system=`You are the AI for ${studioName}, a Nairobi wellness studio. Write warm WhatsApp session reminders under 100 words each. Use *asterisks* for bold. End with "— ${adminName}, ${studioName}". Return only valid JSON.`;
-  const batchContext=`Session: ${session.name}, Date: ${session.dateStr}${session.time?' at '+session.time:''}, Location: Jaffery Sports Club Pavilion Lavington, Booking: ${session.url}, Price: KES 888`;
-  const batch = await callClaudeBatch(system, recipients, batchContext, 'Session Reminder');
-  recipients.forEach(c=>{
-    const found = batch ? batch.find(b=>b.name&&b.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])) : null;
-    const defaultMsg=`Hi ${c.name.split(' ')[0]}! Reminder: *${session.name}* is on *${session.dateStr}*${session.time?' at '+session.time:''}. ${c.rsvpStatus!=='confirmed'?'Book your spot: '+session.url+' ':''} KES 888 · Jaffery Sports Club Pavilion — ${adminName}, ${studioName}`;
-    msgs.push({contact:c, text: found ? found.message : defaultMsg});
+  // Always build default messages first — AI enriches them if available
+  const msgs = recipients.map(c=>{
+    const price = session.price || 888;
+    const bookNote = c.rsvpStatus!=='confirmed' ? ' Book: '+session.url : '';
+    return {
+      contact: c,
+      text: 'Hi '+c.name.split(' ')[0]+'! Just a reminder that *'+session.name+'* is on *'+session.dateStr+'*'+(session.time?' at '+session.time:'')+'.'+bookNote+' KES '+price+' · Jaffery Sports Club Pavilion, Lavington — '+adminName+', '+studioName
+    };
   });
-  window.msgTexts=msgs;
-  document.getElementById('msg-count').textContent=`${msgs.length} messages`;
-  document.getElementById('send-all-btn').style.display='block';
-  document.getElementById('broadcast-messages').innerHTML=msgs.map((m,i)=>{
-    const waMsg=encodeURIComponent(m.text);
-    return`<div class="msg-card fade-in" style="animation-delay:${i*0.04}s">
-      <div class="msg-card-name">${m.contact.name}${m.contact.rsvpStatus==='confirmed'?' ✓':m.contact.rsvpStatus==='pending'?' ⏳':''}</div>
-      <div class="msg-text" id="msg-${i}">${m.text}</div>
-      <div class="msg-actions">
-        ${m.contact.phone?`<a class="wa-btn" href="https://wa.me/${m.contact.phone}?text=${waMsg}" target="_blank">📲 WhatsApp</a>`:'<span style="font-size:11px;color:var(--muted)">No phone</span>'}
-        <button class="copy-btn" onclick="copyMsg(${i})">📋 Copy</button>
-      </div>
-    </div>`;
+
+  // Try to enrich with AI (optional — renders immediately if this fails)
+  renderBroadcastMessages(msgs, session);
+
+  try {
+    const system = 'You are the AI for '+studioName+', a Nairobi wellness studio. Write warm WhatsApp session reminders under 100 words each. Use *asterisks* for bold. End with "— '+adminName+', '+studioName+'". Return only valid JSON.';
+    const batchContext = 'Session: '+session.name+', Date: '+session.dateStr+(session.time?' at '+session.time:'')+', Location: Jaffery Sports Club Pavilion Lavington, Booking: '+session.url+', Price: KES '+(session.price||888);
+    const batch = await callClaudeBatch(system, recipients, batchContext, 'Session Reminder');
+    if(batch){
+      recipients.forEach((c,i)=>{
+        const found = batch.find(b=>b.name&&b.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]));
+        if(found) msgs[i].text = found.message;
+      });
+      renderBroadcastMessages(msgs, session);
+      showToast(msgs.length+' AI messages ready ✓');
+    }
+  } catch(e) {
+    showToast(msgs.length+' messages ready (default template)');
+  }
+}
+
+function renderBroadcastMessages(msgs, session){
+  window.msgTexts = msgs;
+  document.getElementById('msg-count').textContent = msgs.length+' messages';
+  document.getElementById('send-all-btn').style.display = 'block';
+  document.getElementById('broadcast-messages').innerHTML = msgs.map((m,i)=>{
+    const waMsg = encodeURIComponent(m.text);
+    const statusIcon = m.contact.rsvpStatus==='confirmed'?' ✓':m.contact.rsvpStatus==='pending'?' ⏳':'';
+    return '<div class="msg-card fade-in" style="animation-delay:'+i*0.04+'s">'
+      +'<div class="msg-card-name">'+m.contact.name+statusIcon+'</div>'
+      +'<div class="msg-text" id="msg-'+i+'">'+m.text+'</div>'
+      +'<div class="msg-actions">'
+        +(m.contact.phone
+          ? '<a class="wa-btn" href="https://wa.me/'+m.contact.phone+'?text='+waMsg+'" target="_blank">📲 WhatsApp</a>'
+          : '<span style="font-size:11px;color:var(--muted)">No phone — copy to send</span>')
+        +'<button class="copy-btn" onclick="copyMsg('+i+')">📋 Copy</button>'
+      +'</div>'
+    +'</div>';
   }).join('');
-  showToast(`${msgs.length} messages ready`);
 }
 
 async function previewScheduled(sessionId){await broadcastSession(sessionId);}
@@ -1294,15 +1317,28 @@ async function generateBroadcast(){
   document.getElementById('broadcast-messages').innerHTML=`<div class="ai-loading"><div class="spinner"></div><span>Generating ${sel.length} messages in 1 API call...</span></div>`;
   const typeLabels={session_reminder:'Session Reminder',follow_up:'Post-Session Follow-up',new_session:'New Session',win_back:'Win-Back',general:'Check-in'};
   const curMonth=months[months.length-1]||'this month';
-  const msgs=[];
-  const system=`You are the AI for ${studioName}, a Nairobi wellness studio in Nairobi. Write warm personal WhatsApp messages under 120 words each. Use *asterisks* for bold. End every message with "— ${adminName}, ${studioName}". Don't use "I hope this message finds you well". Return only valid JSON.`;
-  // ONE batch call for all contacts
-  const batch = await callClaudeBatch(system, sel, context||`Current month: ${curMonth}`, typeLabels[msgType]);
-  sel.forEach(c=>{
-    const found = batch ? batch.find(b=>b.name&&b.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])) : null;
-    const text = found ? found.message : `Hi ${c.name.split(' ')[0]} 🌿 ${context||'Hope to see you at SPARK Studio soon!'} — ${adminName}, ${studioName}`;
-    msgs.push({contact:c, text});
-  });
+  // Build default messages immediately — show right away, AI enriches after
+  const msgs = sel.map(c=>({
+    contact: c,
+    text: 'Hi '+c.name.split(' ')[0]+' 🌿 '+(context||'Hope to see you at SPARK Studio soon!')+' — '+adminName+', '+studioName
+  }));
+  renderManualBroadcast(msgs);
+
+  // Try AI enrichment in background
+  try {
+    const system = 'You are the AI for '+studioName+', a Nairobi wellness studio in Nairobi. Write warm personal WhatsApp messages under 120 words each. Use *asterisks* for bold. End every message with "— '+adminName+', '+studioName+'". Don\'t use "I hope this message finds you well". Return only valid JSON.';
+    const batch = await callClaudeBatch(system, sel, context||('Current month: '+curMonth), typeLabels[msgType]);
+    if(batch){
+      sel.forEach((c,i)=>{
+        const found = batch.find(b=>b.name&&b.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]));
+        if(found) msgs[i].text = found.message;
+      });
+      renderManualBroadcast(msgs);
+      showToast('AI messages ready ✓');
+    }
+  } catch(e) {
+    showToast(msgs.length+' messages ready');
+  }
   window.msgTexts=msgs;
   document.getElementById('msg-count').textContent=`${msgs.length}`;
   document.getElementById('send-all-btn').style.display='block';
@@ -1317,6 +1353,21 @@ async function generateBroadcast(){
     </div>`).join('');
 }
 function copyMsg(i){navigator.clipboard.writeText(document.getElementById('msg-'+i).textContent);showToast('Copied ✓');}
+function renderManualBroadcast(msgs){
+  window.msgTexts = msgs;
+  document.getElementById('msg-count').textContent = msgs.length;
+  document.getElementById('send-all-btn').style.display = 'block';
+  document.getElementById('broadcast-messages').innerHTML = msgs.map((m,i)=>`
+    <div class="msg-card fade-in" style="animation-delay:${i*0.04}s">
+      <div class="msg-card-name">${m.contact.name}</div>
+      <div class="msg-text" id="msg-${i}">${m.text}</div>
+      <div class="msg-actions">
+        ${m.contact.phone?`<a class="wa-btn" href="https://wa.me/${m.contact.phone}?text=${encodeURIComponent(m.text)}" target="_blank">📲 Send</a>`:'<span style="font-size:10px;color:var(--muted)">No phone</span>'}
+        <button class="copy-btn" onclick="copyMsg(${i})">📋</button>
+      </div>
+    </div>`).join('');
+}
+
 function sendAllWhatsApp(){if(!window.msgTexts)return;window.msgTexts.forEach((m,i)=>{if(m.contact.phone)setTimeout(()=>window.open(`https://wa.me/${m.contact.phone}?text=${encodeURIComponent(m.text)}`,'_blank'),i*600);});}
 
 // ── REPORTS ───────────────────────────────────────────────────────────────
