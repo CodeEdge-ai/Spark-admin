@@ -389,62 +389,85 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
     <!-- BROADCAST -->
     <div class="tab-pane" id="tab-broadcast">
-      <div class="section-title">AI Broadcast</div>
-      <div class="section-sub">Manual sends + auto-scheduled reminders 2 days before every session.</div>
+      <div class="section-title">Weekly Broadcast</div>
+      <div class="section-sub">Send a professional weekly schedule to all clients — every session, every booking link, one message per person.</div>
 
-      <!-- Scheduled queue -->
-      <div class="panel" id="scheduled-panel">
-        <div class="panel-head"><div class="panel-title">⏰ Scheduled Reminders</div><div class="panel-badge" id="sched-badge">checking...</div></div>
-        <div class="panel-body" id="sched-list"></div>
+      <!-- WEEKLY BLAST — PRIMARY FEATURE -->
+      <div class="panel" style="border-color:rgba(74,222,128,.25);background:linear-gradient(135deg,rgba(74,222,128,.04),var(--surface))">
+        <div class="panel-head">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="panel-title">📅 Weekly Schedule Blast</div>
+            <span class="panel-badge" style="background:var(--eglow);color:var(--emerald);border-color:rgba(74,222,128,.25)">recommended</span>
+          </div>
+          <div class="panel-badge" id="weekly-sess-count">loading sessions...</div>
+        </div>
+        <div class="panel-body">
+          <!-- Week selector -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-ghost btn-sm" id="week-prev" onclick="shiftWeek(-1)">← Prev Week</button>
+            <div style="flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--white);font-weight:600" id="week-label">This Week</div>
+            <button class="btn btn-ghost btn-sm" id="week-next" onclick="shiftWeek(1)">Next Week →</button>
+          </div>
+
+          <!-- Sessions this week preview -->
+          <div id="weekly-sessions-preview" style="margin-bottom:16px"></div>
+
+          <!-- Audience -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Send To</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost btn-sm" onclick="selectAllAudience()">Select All</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearAudience()">Clear</button>
+            </div>
+          </div>
+          <div class="audience-list" id="audience-list" style="max-height:200px;margin-bottom:14px"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--emerald)" id="aud-count">0 selected</span>
+            <select class="filter-select" id="aud-filter" onchange="filterAudience()" style="font-size:11px;padding:5px 10px">
+              <option value="">All contacts</option>
+              <option value="Sound Meditation">Sound Meditation clients</option>
+              <option value="Kundalini">Kundalini Yoga clients</option>
+              <option value="Breathwork">Breathwork clients</option>
+              <option value="Vinyasa">Vinyasa Yoga clients</option>
+              <option value="Hatha Kriya">Hatha Kriya clients</option>
+              <option value="Transformational Breath">Transformational Breath clients</option>
+              <option value="inactive">Inactive 30+ days</option>
+            </select>
+          </div>
+
+          <!-- Optional note -->
+          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Add a personal note (optional)</div>
+          <textarea class="form-input" id="weekly-note" rows="2" placeholder="e.g. We have a special Sound Bath this Saturday — Anastancia is back! Book early as spots are limited." style="margin-bottom:14px;font-size:12px"></textarea>
+
+          <button class="btn btn-primary" style="width:100%;padding:13px;font-size:14px" onclick="generateWeeklyBlast()">✦ Generate Weekly Messages</button>
+        </div>
       </div>
 
-      <!-- Manual broadcast -->
-      <div class="bcast-grid">
-        <div>
-          <div class="panel">
-            <div class="panel-head"><div class="panel-title">Audience</div><div class="panel-badge" id="aud-count">0</div></div>
-            <div class="panel-body">
-              <select class="filter-select" style="width:100%;margin-bottom:8px" id="aud-filter" onchange="filterAudience()">
-                <option value="">All contacts</option>
-                <option value="Sound Meditation">Sound Meditation</option>
-                <option value="Kundalini">Kundalini Yoga</option>
-                <option value="Breathwork">Breathwork</option>
-                <option value="Vinyasa">Vinyasa Yoga</option>
-                <option value="Hatha Kriya">Hatha Kriya</option>
-                <option value="Transformational Breath">Transformational Breath</option>
-                <option value="inactive">Inactive 30+ days</option>
-              </select>
-              <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:8px" onclick="selectAllAudience()">Select All</button>
-              <div class="audience-list" id="audience-list"></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><div class="panel-title">Message</div></div>
-            <div class="panel-body">
-              <select class="filter-select" style="width:100%;margin-bottom:10px" id="msg-type">
-                <option value="session_reminder">📅 Session Reminder</option>
-                <option value="follow_up">💚 Post-Session Follow-up</option>
-                <option value="new_session">✨ New Session</option>
-                <option value="win_back">🌿 Win-Back</option>
-                <option value="general">💬 Check-in</option>
-              </select>
-              <textarea class="form-input" id="msg-context" rows="3" placeholder="e.g. Sound Bath this Saturday 4 April at 4:30pm with Anastancia, KES 888" style="margin-bottom:10px"></textarea>
-              <button class="btn btn-primary" style="width:100%" onclick="generateBroadcast()">✦ Generate Messages</button>
-            </div>
+      <!-- Generated messages -->
+      <div class="panel" id="blast-results-panel" style="display:none">
+        <div class="panel-head">
+          <div class="panel-title">Messages Ready to Send</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div class="panel-badge" id="msg-count">0 messages</div>
+            <button class="btn btn-primary btn-sm" id="send-all-btn" onclick="sendAllWhatsApp()" style="display:none">📲 Send All</button>
           </div>
         </div>
-        <div class="panel">
-          <div class="panel-head">
-            <div class="panel-title">Generated Messages</div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <div class="panel-badge" id="msg-count">0</div>
-              <button class="btn btn-ghost btn-sm" id="send-all-btn" onclick="sendAllWhatsApp()" style="display:none">Send All</button>
-            </div>
-          </div>
-          <div class="panel-body" id="broadcast-messages">
-            <div class="empty"><div class="empty-icon">✦</div>Select audience and generate.</div>
-          </div>
+        <div class="panel-body" id="broadcast-messages">
+          <div class="empty"><div class="empty-icon">✦</div>Generate messages above.</div>
         </div>
+      </div>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:12px;margin:20px 0 16px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2)">Other sends</div>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+
+      <!-- Scheduled auto-reminders (secondary) -->
+      <div class="panel" id="scheduled-panel">
+        <div class="panel-head"><div class="panel-title">⏰ 2-Day Session Reminders</div><div class="panel-badge" id="sched-badge">checking...</div></div>
+        <div class="panel-body" id="sched-list"><div style="font-size:12px;color:var(--muted)">Sessions happening in 2 days will appear here automatically for quick reminder sends.</div></div>
       </div>
     </div>
 
@@ -635,7 +658,7 @@ let apiKey=localStorage.getItem('spark_apikey')||'';
 let adminName=localStorage.getItem('spark_admin_name')||'';
 let studioName=localStorage.getItem('spark_studio_name')||'SPARK Studio';
 let studioPhone=localStorage.getItem('spark_wa_phone')||'';
-let selectedContacts=new Set(), selectedAudience=new Set();
+let selectedContacts=new Set(), selectedAudience=new Set(), weekOffset=0;
 let refreshTimer=null;
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
@@ -668,6 +691,7 @@ async function init(){
   if(el) el.textContent=apiCallsToday+' calls today';
   renderContactsTable();
   renderAudienceList();
+  renderWeeklyBlastPreview();
   await syncAll();
   loadEnsoSessions();
   if(refreshTimer)clearInterval(refreshTimer);
@@ -961,7 +985,7 @@ function renderRsvpTab(){
       +'<div class="us-actions">'
         +'<button class="btn btn-primary btn-sm" onclick="openRsvpModal(this.dataset.id)" data-id="'+sid+'">+ Attendee</button>'
         +(s.url?'<a class="btn btn-ghost btn-sm" href="'+s.url+'" target="_blank">🔗 Book</a>':'')
-        +(days<=2?'<button class="btn btn-orange btn-sm" onclick="broadcastSession(this.dataset.id)" data-id="'+sid+'">📲 Remind</button>':'')
+        +(days<=2?'<button class="btn btn-orange btn-sm" onclick="showTab('broadcast');">📅 Send Weekly</button>':'')
         +'<button class="edit-btn" onclick="openEditSession(this.dataset.id)" data-id="'+sid+'" style="padding:5px 9px">✏</button>'
         +'<button class="edit-btn" onclick="deleteSession(this.dataset.id)" data-id="'+sid+'" style="padding:5px 9px;color:var(--red)">✕</button>'
       +'</div>'
@@ -1055,7 +1079,7 @@ function checkAutoScheduled(){
           <div class="bcast-sess-name">${s.name}</div>
           <div class="bcast-sess-meta">${s.dateStr} · ${rsvps.length} RSVP${rsvps.length!==1?'s':''} · <a href="${s.url}" target="_blank" style="color:var(--blue)">Booking page</a></div>
         </div>
-        <button class="send-now-btn" onclick="broadcastSession('${s.id}')">Send Reminders →</button>
+        <button class="send-now-btn" onclick="showTab('broadcast');setTimeout(()=>generateWeeklyBlast(),300)">📅 Weekly Blast →</button>
       </div>`;
     }).join('')}
   </div>`;
@@ -1308,6 +1332,152 @@ function renderAudienceList(){
 function filterAudience(){selectedAudience.clear();renderAudienceList();}
 function toggleAudience(id,el){if(selectedAudience.has(id)){selectedAudience.delete(id);el.classList.remove('selected');el.querySelector('input').checked=false;}else{selectedAudience.add(id);el.classList.add('selected');el.querySelector('input').checked=true;}document.getElementById('aud-count').textContent=selectedAudience.size;}
 function selectAllAudience(){document.querySelectorAll('.audience-item').forEach(el=>{const match=el.getAttribute('onclick')?.match(/'([^']+)'/);if(match){selectedAudience.add(match[1]);el.classList.add('selected');el.querySelector('input').checked=true;}});document.getElementById('aud-count').textContent=selectedAudience.size;}
+
+// ── WEEKLY SCHEDULE BLAST ─────────────────────────────────────────────────────
+function getWeekSessions(offset){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dayOfWeek=today.getDay();
+  const monday=new Date(today);
+  monday.setDate(today.getDate()-(dayOfWeek===0?6:dayOfWeek-1)+(offset*7));
+  const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
+  return ensoSessions.filter(s=>{
+    const d=new Date(s.date);d.setHours(0,0,0,0);
+    return d>=monday&&d<=sunday;
+  }).sort((a,b)=>new Date(a.date)-new Date(b.date));
+}
+
+function getWeekLabel(offset){
+  const today=new Date();today.setHours(0,0,0,0);
+  const dayOfWeek=today.getDay();
+  const monday=new Date(today);
+  monday.setDate(today.getDate()-(dayOfWeek===0?6:dayOfWeek-1)+(offset*7));
+  const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
+  const opts={day:'numeric',month:'short'};
+  if(offset===0)return'This Week ('+monday.toLocaleDateString('en-GB',opts)+' – '+sunday.toLocaleDateString('en-GB',opts)+')';
+  if(offset===1)return'Next Week ('+monday.toLocaleDateString('en-GB',opts)+' – '+sunday.toLocaleDateString('en-GB',opts)+')';
+  if(offset===-1)return'Last Week ('+monday.toLocaleDateString('en-GB',opts)+' – '+sunday.toLocaleDateString('en-GB',opts)+')';
+  return monday.toLocaleDateString('en-GB',opts)+' – '+sunday.toLocaleDateString('en-GB',opts);
+}
+
+function shiftWeek(dir){
+  weekOffset+=dir;
+  renderWeeklyBlastPreview();
+}
+
+function renderWeeklyBlastPreview(){
+  const sessions=getWeekSessions(weekOffset);
+  const label=document.getElementById('week-label');
+  const count=document.getElementById('weekly-sess-count');
+  const preview=document.getElementById('weekly-sessions-preview');
+  if(label)label.textContent=getWeekLabel(weekOffset);
+  if(count)count.textContent=sessions.length+' session'+(sessions.length!==1?'s':'');
+  if(!preview)return;
+  if(!sessions.length){
+    preview.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0">No sessions added for this week. Go to the RSVP tab and tap 📅 This Week or 📅 Next Week to generate them.</div>';
+    return;
+  }
+  const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  preview.innerHTML=sessions.map(s=>{
+    const d=new Date(s.date);
+    const days=daysUntil(s.date);
+    const rsvpCount=(rsvpData[s.id]||[]).filter(r=>r.status==='confirmed').length;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px">
+      <div style="text-align:center;min-width:36px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase">${DAY_NAMES[d.getDay()]}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:${days<=1?'var(--red)':days<=3?'var(--gold)':'var(--emerald)'}">${d.getDate()}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--white)">${s.name}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${s.time?s.time+' · ':''}${s.practitioner?'with '+s.practitioner+' · ':''}KES ${s.price||888}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--emerald)">${rsvpCount} RSVP${rsvpCount!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function generateWeeklyBlast(){
+  if(!selectedAudience.size){showToast('Select at least one contact to send to');return;}
+  const sessions=getWeekSessions(weekOffset);
+  if(!sessions.length){showToast('No sessions this week. Add them in the RSVP tab first.');return;}
+
+  const sel=contacts.filter(c=>selectedAudience.has(c.id));
+  const note=document.getElementById('weekly-note').value.trim();
+  const weekLabel=getWeekLabel(weekOffset);
+
+  // Build the schedule block used in every message
+  const DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const scheduleLines=sessions.map(s=>{
+    const d=new Date(s.date);
+    return`*${DAY_NAMES[d.getDay()]} ${d.getDate()} — ${s.name}*
+🕐 ${s.time||'TBC'} | 👤 ${s.practitioner||studioName} | 💰 KES ${s.price||888}
+📲 Book: ${s.url||'https://www.ensokenya.com/enso-spark'}`;
+  }).join('
+
+');
+
+  document.getElementById('blast-results-panel').style.display='block';
+  document.getElementById('broadcast-messages').innerHTML=`<div class="ai-loading"><div class="spinner"></div><span>Generating ${sel.length} personalised weekly messages...</span></div>`;
+
+  // Build default messages immediately — show right away
+  const msgs=sel.map(c=>({
+    contact:c,
+    text:`Hi ${c.name.split(' ')[0]} 🌿
+
+Here is your weekly wellness schedule at *${studioName}*${weekLabel?' — '+weekLabel:''}:
+
+${scheduleLines}
+
+${note?note+'
+
+':''}All sessions are at *Jaffery Sports Club Pavilion, Lavington*. Book your spot early — spaces are limited!
+
+Looking forward to seeing you 🙏
+— ${adminName}, ${studioName}`
+  }));
+  renderManualBroadcast(msgs);
+
+  // AI enrichment — personalise the intro per client
+  try{
+    const system=`You are the community manager for ${studioName}, a wellness studio in Nairobi. Write personalised weekly schedule intro messages for each client. The schedule block will be inserted after your intro. Your intro should: greet them by name warmly, mention a session they might enjoy based on their history, be 2 sentences max, end with a line break. Return ONLY a JSON array: [{"name":"...","intro":"..."}]. No other text.`;
+    const clientLines=sel.map((c,i)=>`${i+1}. ${c.name}, attends: ${(c.sessions||[]).join(', ')||'various sessions'}`).join('
+');
+    const prompt=`Write personalised intros for these ${sel.length} clients:
+${clientLines}
+
+Week: ${weekLabel}${note?'
+Special note to include: '+note:''}`;
+    const batch=await callClaudeBatch(system,sel,prompt,'Weekly Schedule');
+    if(batch){
+      sel.forEach((c,i)=>{
+        const found=batch.find(b=>b.name&&b.name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]));
+        if(found&&found.intro){
+          msgs[i].text=`${found.intro}
+
+*${studioName} — Weekly Schedule*
+
+${scheduleLines}
+
+${note?note+'
+
+':''}📍 *Jaffery Sports Club Pavilion, Lavington*
+Spaces are limited — book early!
+
+— ${adminName}, ${studioName}`;
+        }
+      });
+      renderManualBroadcast(msgs);
+      showToast(`${msgs.length} personalised weekly messages ready ✓`);
+    }
+  }catch(e){
+    showToast(`${msgs.length} messages ready`);
+  }
+}
+
+function clearAudience(){
+  selectedAudience.clear();
+  document.querySelectorAll('.audience-item').forEach(el=>{el.classList.remove('selected');const cb=el.querySelector('input');if(cb)cb.checked=false;});
+  document.getElementById('aud-count').textContent='0 selected';
+}
 
 async function generateBroadcast(){
   if(!selectedAudience.size){showToast('Select at least one contact');return;}
@@ -1706,7 +1876,7 @@ function showTab(id){
   document.querySelectorAll('.nav-tab').forEach(b=>{if(b.textContent.toLowerCase().includes(id.slice(0,4)))b.classList.add('active');});
   const bn=document.getElementById('bnav-'+id);if(bn)bn.classList.add('active');
   if(id==='contacts')renderContactsTable();
-  if(id==='broadcast')renderAudienceList();
+  if(id==='broadcast'){renderAudienceList();renderWeeklyBlastPreview();}
   if(id==='rsvp')renderRsvpTab();
   document.querySelector('.content').scrollTop=0;
 }
