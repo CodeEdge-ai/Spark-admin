@@ -437,7 +437,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <script>
 var SHEET='2PACX-1vR7vqT3yeUecPwtwWHBXZTLkrvqnq7MTBDFRbtfVRcHjSKCLxZeMJekvV5mRb8i72dWDf3D55SfQmAa';
 var CSV={sessions:'https://docs.google.com/spreadsheets/d/e/'+SHEET+'/pub?gid=0&single=true&output=csv',practitioners:'https://docs.google.com/spreadsheets/d/e/'+SHEET+'/pub?gid=135420663&single=true&output=csv',history:'https://docs.google.com/spreadsheets/d/e/'+SHEET+'/pub?gid=1394578292&single=true&output=csv'};
-var PX=[function(u){return u;},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u);},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u);},function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u);}];
+var PX=[
+  function(u){return u;},
+  function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u);},
+  function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u);},
+  function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u);},
+  function(u){return 'https://thingproxy.freeboard.io/fetch/'+encodeURIComponent(u);},
+  function(u){return 'https://jsonp.afeld.me/?url='+encodeURIComponent(u);}
+];
 var MH='claude-haiku-4-5-20251001',MS='claude-sonnet-4-20250514',DC=0.5;
 var WS=[{key:'kundalini',dow:1,time:'17:15',name:'Kundalini Yoga',practitioner:'Lut',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'jiujitsu_mon',dow:1,time:'18:30',name:'Jiu Jitsu',practitioner:'Davis',price:999,url:'https://www.ensokenya.com/enso-spark'},{key:'breathwork',dow:2,time:'18:30',name:'Breathwork',practitioner:'Vincent',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'hatha',dow:3,time:'18:30',name:'Hatha Kriya Yoga',practitioner:'Danny',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'jiujitsu_thu',dow:4,time:'18:30',name:'Jiu Jitsu',practitioner:'Davis',price:999,url:'https://www.ensokenya.com/enso-spark'},{key:'sound',dow:6,time:'16:30',name:'Sound Meditation',practitioner:'Anastancia',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'vinyasa',dow:0,time:'10:00',name:'Vinyasa Flow Yoga',practitioner:'Alex',price:888,url:'https://www.ensokenya.com/enso-spark'}];
 var sessions=[],practitioners=[],history=[],months=[],sessionHeaders=[];
@@ -482,9 +489,19 @@ async function init(){
 }
 
 async function fetchURL(url){
+  var lastErr="";
   for(var i=0;i<PX.length;i++){
-    try{var r=await fetch(PX[i](url),{signal:AbortSignal.timeout(9000)});if(!r.ok)throw new Error();var t=await r.text();if(t.trim().length>10&&t.indexOf(',')>=0)return t;}catch(e){}
-  }throw new Error('All proxies failed');
+    try{
+      var ctrl=new AbortController();
+      var timer=setTimeout(function(){ctrl.abort();},12000);
+      var r=await fetch(PX[i](url),{signal:ctrl.signal});
+      clearTimeout(timer);
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      var t=await r.text();
+      if(t.trim().length>10&&t.indexOf(",")>=0)return t;
+    }catch(e){lastErr=e.message||"failed";}
+  }
+  throw new Error("All proxies failed ("+lastErr+")");
 }
 
 function parseCSV(text,sh){
@@ -508,19 +525,39 @@ function daysUntil(date){if(!date)return 999;var now=new Date();now.setHours(0,0
 
 async function syncAll(){
   setStatus('loading','Syncing...');
+  // Try fetching one sheet at a time so partial failures still show some data
+  var ok=0;
   try{
-    var results=await Promise.all([fetchURL(CSV.sessions),fetchURL(CSV.practitioners),fetchURL(CSV.history)]);
-    sessions=parseCSV(results[0],true).filter(function(r){var m=f(r,'Month','month');return f(r,'Date','date')&&m&&m.indexOf('1899')<0&&m.trim()!=='';});
-    practitioners=parseCSV(results[1]).filter(function(r){return f(r,'Name','Practitioner Name','name')!=='';});
-    history=parseCSV(results[2]).filter(function(r){return f(r,'Practitioner','practitioner')!=='';});
-    var set=new Set();sessions.forEach(function(r){var m=f(r,'Month','month');if(m&&m.indexOf('1899')<0)set.add(m.trim());});
-    months=Array.from(set).sort(function(a,b){return new Date('1 '+a)-new Date('1 '+b);});
-    setStatus('live','Live '+new Date().toLocaleTimeString());
-    renderDashboard();renderReportsTab();populateReportMonths();checkAutoScheduled();
-    var today=new Date().toDateString();
-    if(localStorage.getItem('spark_brief_date')!==today){generateDailyBrief();localStorage.setItem('spark_brief_date',today);}
-    else{var saved=localStorage.getItem('spark_brief_text');if(saved){var d=JSON.parse(saved);showBrief(d.title,d.content);}}
-  }catch(e){setStatus('err','Sync failed');}
+    var st=await fetchURL(CSV.sessions);
+    sessions=parseCSV(st,true).filter(function(r){var m=f(r,'Month','month');return f(r,'Date','date')&&m&&m.indexOf('1899')<0&&m.trim()!=='';});
+    ok++;
+  }catch(e){showToast('Sessions fetch failed - check sheet is published');}
+  try{
+    var pt=await fetchURL(CSV.practitioners);
+    practitioners=parseCSV(pt).filter(function(r){return f(r,'Name','Practitioner Name','name')!=='';});
+    ok++;
+  }catch(e){}
+  try{
+    var ht=await fetchURL(CSV.history);
+    history=parseCSV(ht).filter(function(r){return f(r,'Practitioner','practitioner')!=='';});
+    ok++;
+  }catch(e){}
+
+  if(ok===0){
+    setStatus('err','Sync failed - check internet connection');
+    document.getElementById('brief-content').innerHTML='<div style="font-size:12px;color:var(--red);line-height:1.7">Could not reach Google Sheets.<br><br><strong>Fix checklist:</strong><br>1. Is your Google Sheet published? (File > Share > Publish to web)<br>2. Are all 3 tabs published as CSV?<br>3. Check your internet connection<br><br><button class="btn btn-primary btn-sm" onclick="syncAll()">Retry Sync</button></div>';
+    document.getElementById('brief-title').textContent='Sync Failed';
+    return;
+  }
+
+  var set=new Set();
+  sessions.forEach(function(r){var m=f(r,'Month','month');if(m&&m.indexOf('1899')<0)set.add(m.trim());});
+  months=Array.from(set).sort(function(a,b){return new Date('1 '+a)-new Date('1 '+b);});
+  setStatus(ok===3?'live':'loading', ok===3?('Live '+new Date().toLocaleTimeString()):(ok+'/3 sheets loaded'));
+  renderDashboard();renderReportsTab();populateReportMonths();checkAutoScheduled();
+  var today=new Date().toDateString();
+  if(localStorage.getItem('spark_brief_date')!==today){generateDailyBrief();localStorage.setItem('spark_brief_date',today);}
+  else{var saved=localStorage.getItem('spark_brief_text');if(saved){var d=JSON.parse(saved);showBrief(d.title,d.content);}}
 }
 
 function calcBalance(name,month){
