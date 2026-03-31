@@ -4,14 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPARK Admin</title>
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#4ade80">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
+/* ── Original variables & reset (unchanged) ── */
 :root{--bg:#080b0a;--surface:#0f1512;--surface2:#161e1a;--surface3:#1d2822;--border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);--emerald:#4ade80;--eglow:rgba(74,222,128,.15);--gold:#f0c040;--gglow:rgba(240,192,64,.12);--red:#f87171;--blue:#60a5fa;--orange:#fb923c;--white:#eef2f0;--muted:#5a7468;--muted2:#3d5048;--radius:14px;--shadow:0 8px 40px rgba(0,0,0,.5)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--white);display:flex;flex-direction:column}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 80% 10%,rgba(74,222,128,.04),transparent 60%),radial-gradient(ellipse 40% 30% at 10% 90%,rgba(96,165,250,.03),transparent 60%);pointer-events:none;z-index:0}
+/* ── Offline Banner (NEW) ── */
+#offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(248,113,113,.15);border-bottom:1px solid rgba(248,113,113,.4);padding:8px 18px;font-family:'DM Mono',monospace;font-size:11px;color:var(--red);text-align:center;letter-spacing:.04em;backdrop-filter:blur(8px)}
+#offline-banner.show{display:block}
+/* ── Setup (unchanged) ── */
 #setup{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:900;padding:20px;overflow-y:auto}
 .setup-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:40px 36px;max-width:460px;width:100%}
 .setup-logo{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:var(--white);margin-bottom:6px}
@@ -24,6 +39,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .setup-btn{width:100%;background:var(--emerald);color:#050d08;border:none;border-radius:10px;padding:13px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
 .setup-btn:hover{opacity:.88}
 .setup-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;text-align:center}
+/* ── App shell (unchanged) ── */
 #app{display:none;flex-direction:column;height:100%;position:relative;z-index:1}
 .topnav{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:54px;border-bottom:1px solid var(--border);flex-shrink:0;background:rgba(8,11,10,.9);backdrop-filter:blur(12px);position:relative;z-index:10}
 .nav-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--white)}
@@ -41,18 +57,30 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .icon-btn:hover{color:var(--white);border-color:var(--emerald)}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px}
 .tab-pane{display:none}.tab-pane.active{display:block}
+/* ── Bottom nav — MOBILE FIRST: visible at < 900px (upgraded) ── */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,11,10,.97);backdrop-filter:blur(16px);border-top:1px solid var(--border2);z-index:50;padding:0 4px}
 .bottom-nav-inner{display:flex;align-items:stretch;height:62px}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 2px;transition:all .18s}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 2px;transition:all .18s;position:relative}
 .bnav-btn.active{color:var(--emerald)}.bnav-btn.active .bnav-icon{transform:scale(1.1)}
 .bnav-icon{font-size:18px;line-height:1;transition:transform .18s}
 .bnav-label{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-family:'DM Mono',monospace}
+/* ── Stat grid & cards (unchanged) ── */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;transition:border-color .2s,transform .18s}
 .stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
 .stat-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .stat-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--white);line-height:1}
 .stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+/* ── Skeleton loader (NEW) ── */
+.skeleton{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-line{height:13px;margin-bottom:8px;border-radius:6px}
+.skel-line.short{width:40%}
+.skel-line.med{width:65%}
+.skel-line.full{width:100%}
+.skel-stat{height:48px;border-radius:10px}
+.skel-row{height:48px;border-radius:8px;margin-bottom:6px}
+/* ── Panel & misc (unchanged) ── */
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
 .panel-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .panel-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;color:var(--white)}
@@ -188,16 +216,52 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .toast.show{transform:translateY(0);opacity:1}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .35s ease both}
-@media(max-width:800px){.stat-grid{grid-template-columns:repeat(2,1fr)}.nav-tabs{display:none}.two-col{grid-template-columns:1fr}.bottom-nav{display:flex}.content{padding:14px 14px 74px}.topnav{padding:0 14px}.nav-right .status-txt{display:none}}
+/* ── FullCalendar dark theme overrides (NEW) ── */
+#rsvp-calendar{background:var(--surface2);border-radius:var(--radius);padding:12px;margin-bottom:14px}
+.fc{color:var(--white);font-family:'Outfit',sans-serif;font-size:12px}
+.fc .fc-toolbar-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--white)}
+.fc .fc-button{background:var(--surface2);border:1px solid var(--border2);color:var(--white);font-family:'DM Mono',monospace;font-size:10px;border-radius:8px;padding:4px 10px}
+.fc .fc-button:hover,.fc .fc-button-active{background:var(--emerald);color:#050d08;border-color:var(--emerald)}
+.fc .fc-daygrid-day{background:var(--surface);border-color:var(--border)}
+.fc .fc-daygrid-day-number{color:var(--muted);font-family:'DM Mono',monospace;font-size:11px}
+.fc .fc-col-header-cell{background:var(--surface2);border-color:var(--border)}
+.fc .fc-col-header-cell-cushion{color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.fc .fc-event{border-radius:5px;border:none;font-size:11px;padding:2px 5px;font-family:'DM Mono',monospace}
+.fc .fc-daygrid-day.fc-day-today{background:rgba(74,222,128,.06)}
+.fc .fc-scrollgrid{border-color:var(--border)}
+.fc td,.fc th{border-color:var(--border)}
+/* ── Chart containers (NEW) ── */
+.chart-wrap{background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:14px}
+.chart-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+/* ── Settings backup section (NEW) ── */
+.settings-divider{height:1px;background:var(--border);margin:16px 0}
+.settings-section-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+/* ── Responsive (bottom nav at < 900px — UPGRADED) ── */
+@media(max-width:900px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .nav-tabs{display:none}
+  .two-col{grid-template-columns:1fr}
+  .bottom-nav{display:flex}
+  .content{padding:14px 14px 74px}
+  .topnav{padding:0 14px}
+  .nav-right .status-txt{display:none}
+  .charts-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
+
+<!-- Offline Banner (NEW) -->
+<div id="offline-banner">&#9888; You are offline — data is cached. Changes will sync when connection returns.</div>
+
+<!-- SETUP -->
 <div id="setup">
   <div class="setup-card">
     <div class="setup-logo">SPARK <em>Admin</em></div>
     <div class="setup-sub">AI-powered studio management. Enter your details to continue.</div>
     <label class="setup-label">Anthropic API Key</label>
-    <input class="setup-input" id="api-key-input" type="password" placeholder="sk-ant-api03-...">
+    <input class="setup-input" id="api-key-input" type="password" placeholder="sk-ant-api03-... (or leave blank if using proxy)">
     <label class="setup-label">Your Name</label>
     <input class="setup-input" id="admin-name-input" type="text" placeholder="e.g. Sarah">
     <label class="setup-label">Studio WhatsApp Number</label>
@@ -206,6 +270,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="setup-note">Your API key is stored only in this browser. Get a key at <strong>console.anthropic.com</strong></div>
   </div>
 </div>
+
+<!-- APP -->
 <div id="app">
   <nav class="topnav">
     <div class="nav-logo">SPARK <em>Admin</em></div>
@@ -224,31 +290,53 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button class="icon-btn" onclick="openSettings()">settings</button>
     </div>
   </nav>
+
+  <!-- Bottom nav — mobile first (always shown < 900px) -->
   <div class="bottom-nav">
     <div class="bottom-nav-inner">
       <button class="bnav-btn active" id="bnav-dashboard" onclick="showTab('dashboard')"><span class="bnav-icon">&#8962;</span><span class="bnav-label">Home</span></button>
-      <button class="bnav-btn" id="bnav-rsvp" onclick="showTab('rsvp')"><span class="bnav-icon">&#9776;</span><span class="bnav-label">RSVP</span></button>
-      <button class="bnav-btn" id="bnav-contacts" onclick="showTab('contacts')"><span class="bnav-icon">&#128101;</span><span class="bnav-label">Clients</span></button>
+      <button class="bnav-btn" id="bnav-rsvp"      onclick="showTab('rsvp')"     ><span class="bnav-icon">&#9776;</span><span class="bnav-label">RSVP</span></button>
+      <button class="bnav-btn" id="bnav-contacts"  onclick="showTab('contacts')" ><span class="bnav-icon">&#128101;</span><span class="bnav-label">Clients</span></button>
       <button class="bnav-btn" id="bnav-broadcast" onclick="showTab('broadcast')"><span class="bnav-icon">&#128241;</span><span class="bnav-label">Broadcast</span></button>
-      <button class="bnav-btn" id="bnav-reports" onclick="showTab('reports')"><span class="bnav-icon">&#128196;</span><span class="bnav-label">Reports</span></button>
-      <button class="bnav-btn" id="bnav-ai" onclick="showTab('ai')"><span class="bnav-icon">&#10022;</span><span class="bnav-label">AI</span></button>
+      <button class="bnav-btn" id="bnav-reports"   onclick="showTab('reports')"  ><span class="bnav-icon">&#128196;</span><span class="bnav-label">Reports</span></button>
+      <button class="bnav-btn" id="bnav-ai"        onclick="showTab('ai')"       ><span class="bnav-icon">&#10022;</span><span class="bnav-label">AI</span></button>
     </div>
   </div>
+
   <div class="content">
+
+    <!-- DASHBOARD -->
     <div class="tab-pane active" id="tab-dashboard">
-      <div class="ai-brief" id="ai-brief"><div class="ai-eyebrow">AI Daily Brief</div><div class="ai-title" id="brief-title">Loading your brief...</div><div class="ai-content" id="brief-content"><div class="ai-loading"><div class="spinner"></div><span>Analysing studio data...</span></div></div></div>
+      <div class="ai-brief" id="ai-brief">
+        <div class="ai-eyebrow">AI Daily Brief</div>
+        <div class="ai-title" id="brief-title">Loading your brief...</div>
+        <div class="ai-content" id="brief-content"><div class="ai-loading"><div class="spinner"></div><span>Analysing studio data...</span></div></div>
+      </div>
       <div id="auto-bcast-alert" style="display:none"></div>
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Sessions</div><div class="stat-val" id="s-sessions">0</div><div class="stat-sub">all time</div></div>
-        <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-val" id="s-clients">0</div><div class="stat-sub">in database</div></div>
-        <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-val" id="s-revenue" style="color:var(--emerald);font-size:22px">0</div><div class="stat-sub" id="s-month">revenue</div></div>
-        <div class="stat-card"><div class="stat-label">Owed</div><div class="stat-val" id="s-owed" style="color:var(--gold);font-size:22px">0</div><div class="stat-sub">payouts</div></div>
+      <!-- Stat grid with skeleton placeholders -->
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card"><div class="stat-label">Sessions</div><div class="stat-val" id="s-sessions"><div class="skeleton skel-stat"></div></div><div class="stat-sub">all time</div></div>
+        <div class="stat-card"><div class="stat-label">Clients</div><div class="stat-val" id="s-clients"><div class="skeleton skel-stat"></div></div><div class="stat-sub">in database</div></div>
+        <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-val" id="s-revenue" style="color:var(--emerald);font-size:22px"><div class="skeleton skel-stat"></div></div><div class="stat-sub" id="s-month">revenue</div></div>
+        <div class="stat-card"><div class="stat-label">Owed</div><div class="stat-val" id="s-owed" style="color:var(--gold);font-size:22px"><div class="skeleton skel-stat"></div></div><div class="stat-sub">payouts</div></div>
       </div>
       <div class="two-col">
-        <div class="panel"><div class="panel-head"><div class="panel-title">Follow-up Needed</div><div class="panel-badge" id="follow-badge">checking</div></div><div class="panel-body" id="follow-list"><div class="ai-loading"><div class="spinner"></div><span>Checking...</span></div></div></div>
-        <div class="panel"><div class="panel-head"><div class="panel-title">Upcoming Sessions</div><div class="panel-badge" id="upcoming-badge">loading</div></div><div class="panel-body" id="upcoming-mini"></div></div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Follow-up Needed</div><div class="panel-badge" id="follow-badge">checking</div></div>
+          <div class="panel-body" id="follow-list">
+            <div class="skeleton skel-row"></div><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Upcoming Sessions</div><div class="panel-badge" id="upcoming-badge">loading</div></div>
+          <div class="panel-body" id="upcoming-mini">
+            <div class="skeleton skel-row"></div><div class="skeleton skel-row"></div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- RSVP — with FullCalendar toggle (NEW) -->
     <div class="tab-pane" id="tab-rsvp">
       <div class="section-title">RSVP Tracker</div>
       <div class="section-sub">Add upcoming sessions and track attendees for each one.</div>
@@ -256,16 +344,24 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <button class="btn btn-primary btn-sm" onclick="openAddSession()">+ Add Session</button>
         <button class="btn btn-ghost btn-sm" onclick="generateWeek(0)">This Week</button>
         <button class="btn btn-ghost btn-sm" onclick="generateWeek(1)">Next Week</button>
+        <!-- Calendar/List toggle (NEW) -->
+        <button class="btn btn-ghost btn-sm" id="cal-toggle-btn" onclick="toggleCalendarView()">&#128197; Calendar View</button>
         <a class="panel-badge" href="https://www.ensokenya.com/enso-spark" target="_blank" style="cursor:pointer;text-decoration:none">Enso Schedule</a>
         <div class="panel-badge" id="rsvp-total">0 sessions</div>
       </div>
+      <!-- FullCalendar (NEW) — hidden by default -->
+      <div id="rsvp-calendar" style="display:none"></div>
+      <!-- List view (original) -->
       <div id="rsvp-sessions-list"><div class="empty"><div class="empty-icon">&#128203;</div>No sessions yet. Tap + Add Session or generate this week.</div></div>
     </div>
+
+    <!-- CONTACTS -->
     <div class="tab-pane" id="tab-contacts">
       <div class="section-title">Client Contacts</div>
       <div class="section-sub">All clients tagged by sessions attended.</div>
       <div class="toolbar">
-        <input class="search-box" id="contact-search" placeholder="Search name, phone..." oninput="renderContacts()">
+        <!-- Debounced search (oninput replaced with debounce in JS) -->
+        <input class="search-box" id="contact-search" placeholder="Search name, phone..." oninput="debouncedSearch()">
         <select class="filter-select" id="contact-filter" onchange="renderContacts()">
           <option value="">All sessions</option>
           <option value="Sound Meditation">Sound Meditation</option>
@@ -281,8 +377,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <div class="panel" style="overflow-x:auto">
         <table class="ctable">
-          <thead><tr><th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th><th>Client</th><th>Phone</th><th>Sessions</th><th>Last Seen</th><th>Actions</th></tr></thead>
-          <tbody id="contacts-tbody"></tbody>
+          <thead><tr>
+            <th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
+            <th>Client</th><th>Phone</th><th>Sessions</th><th>Last Seen</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="contacts-tbody">
+            <!-- Skeleton rows shown until data loads -->
+            <tr><td colspan="6"><div class="skeleton skel-row" style="margin:4px 0"></div></td></tr>
+            <tr><td colspan="6"><div class="skeleton skel-row" style="margin:4px 0"></div></td></tr>
+            <tr><td colspan="6"><div class="skeleton skel-row" style="margin:4px 0"></div></td></tr>
+          </tbody>
         </table>
       </div>
       <div id="bulk-actions" style="display:none" class="toolbar">
@@ -291,6 +395,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <button class="btn btn-danger btn-sm" onclick="bulkDelete()">Delete</button>
       </div>
     </div>
+
+    <!-- BROADCAST (unchanged) -->
     <div class="tab-pane" id="tab-broadcast">
       <div class="section-title">Weekly Broadcast</div>
       <div class="section-sub">Send the full weekly schedule to all clients — every session, every booking link, one personalised message per person.</div>
@@ -347,15 +453,37 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <div class="panel"><div class="panel-head"><div class="panel-title">2-Day Session Reminders</div><div class="panel-badge" id="sched-badge">checking</div></div><div class="panel-body" id="sched-list"><div style="font-size:12px;color:var(--muted)">Sessions happening in 2 days will appear here automatically.</div></div></div>
     </div>
+
+    <!-- REPORTS — with Chart.js charts (NEW charts added above PDF buttons) -->
     <div class="tab-pane" id="tab-reports">
       <div class="section-title">Reports</div>
-      <div class="section-sub">Download practitioner and financial reports as PDFs.</div>
+      <div class="section-sub">Interactive charts and downloadable PDF reports.</div>
+
+      <!-- Chart.js Charts (NEW) -->
+      <div class="charts-row">
+        <div class="chart-wrap">
+          <div class="chart-title">Revenue Trend</div>
+          <canvas id="chart-revenue" height="160"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Session Types</div>
+          <canvas id="chart-sessions" height="160"></canvas>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Practitioner Revenue</div>
+        <canvas id="chart-practitioners" height="120"></canvas>
+      </div>
+
+      <!-- Original PDF report cards (unchanged) -->
       <div class="panel"><div class="panel-head"><div class="panel-title">Practitioner Reports</div></div><div class="panel-body" id="pract-report-list"><div class="ai-loading"><div class="spinner"></div><span>Loading...</span></div></div></div>
       <div class="panel"><div class="panel-head"><div class="panel-title">Financial Reports</div></div><div class="panel-body">
         <div class="report-card"><div class="report-icon" style="background:var(--eglow);color:var(--emerald);font-family:'DM Mono',monospace;font-size:10px">YTD</div><div class="report-info"><div class="report-name">Year-to-Date Report</div><div class="report-desc">All sessions, revenue and payouts across all months</div></div><button class="btn btn-primary btn-sm" onclick="downloadYTDReport()">Download PDF</button></div>
         <div class="report-card"><div class="report-icon" style="background:var(--gglow);color:var(--gold);font-family:'DM Mono',monospace;font-size:10px">MON</div><div class="report-info"><div class="report-name">Monthly Report</div><div class="report-desc">Session breakdown for selected month</div></div><div style="display:flex;gap:6px;align-items:center"><select class="filter-select" id="report-month-sel" style="font-size:11px;padding:5px 8px"></select><button class="btn btn-ghost btn-sm" onclick="downloadMonthlyReport()">Download PDF</button></div></div>
       </div></div>
     </div>
+
+    <!-- AI (unchanged) -->
     <div class="tab-pane" id="tab-ai">
       <div class="section-title">AI Assistant</div>
       <div class="section-sub">Ask anything about your studio.</div>
@@ -369,8 +497,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
       </div>
     </div>
-  </div>
-</div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- MODALS (unchanged except settings has new fields) -->
 <div class="modal-overlay" id="contact-modal">
   <div class="modal"><div class="modal-head"><div class="modal-title" id="contact-modal-title">Add Contact</div><button class="modal-close" onclick="closeContactModal()">&#10005;</button></div>
   <div class="modal-body"><input type="hidden" id="contact-edit-id">
@@ -391,6 +522,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="form-footer"><button class="btn btn-ghost" onclick="closeContactModal()">Cancel</button><button class="btn btn-primary" onclick="saveContact()">Save</button></div>
   </div></div>
 </div>
+
 <div class="modal-overlay" id="add-session-modal">
   <div class="modal"><div class="modal-head"><div class="modal-title" id="add-sess-title">Add Session</div><button class="modal-close" onclick="closeAddSession()">&#10005;</button></div>
   <div class="modal-body"><input type="hidden" id="edit-session-id">
@@ -415,6 +547,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="form-footer"><button class="btn btn-ghost" onclick="closeAddSession()">Cancel</button><button class="btn btn-primary" onclick="saveSession()">Save Session</button></div>
   </div></div>
 </div>
+
 <div class="modal-overlay" id="rsvp-modal">
   <div class="modal"><div class="modal-head"><div class="modal-title">Add Attendee</div><button class="modal-close" onclick="closeRsvpModal()">&#10005;</button></div>
   <div class="modal-body"><input type="hidden" id="rsvp-session-id">
@@ -423,30 +556,56 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="form-footer"><button class="btn btn-ghost" onclick="closeRsvpModal()">Cancel</button><button class="btn btn-primary" onclick="saveRsvp()">Add Attendee</button></div>
   </div></div>
 </div>
+
+<!-- SETTINGS — upgraded with proxy, Supabase, and backup section -->
 <div class="modal-overlay" id="settings-modal">
   <div class="modal"><div class="modal-head"><div class="modal-title">Settings</div><button class="modal-close" onclick="closeSettingsModal()">&#10005;</button></div>
   <div class="modal-body">
-    <div class="form-group"><label class="form-label">Anthropic API Key</label><input class="form-input" id="s-apikey" type="password"></div>
+    <div class="form-group"><label class="form-label">Anthropic API Key</label><input class="form-input" id="s-apikey" type="password" placeholder="sk-ant-... (leave blank if using proxy)"></div>
     <div class="form-group"><label class="form-label">Admin Name</label><input class="form-input" id="s-name"></div>
     <div class="form-group"><label class="form-label">Studio Name</label><input class="form-input" id="s-studio"></div>
     <div class="form-group"><label class="form-label">Studio WhatsApp</label><input class="form-input" id="s-waphone" placeholder="254700000000"></div>
-    <div class="form-footer"><button class="btn btn-ghost" onclick="closeSettingsModal()">Cancel</button><button class="btn btn-primary" onclick="saveSettingsModal()">Save</button></div>
+
+    <!-- Backend Proxy section (NEW) -->
+    <div class="settings-divider"></div>
+    <div class="settings-section-label">Backend Proxy (optional)</div>
+    <div class="form-group"><label class="form-label">Proxy URL</label><input class="form-input" id="s-proxy" placeholder="https://your-app.vercel.app"></div>
+
+    <!-- Supabase section (NEW) -->
+    <div class="settings-divider"></div>
+    <div class="settings-section-label">Supabase (optional)</div>
+    <div class="form-group"><label class="form-label">Supabase URL</label><input class="form-input" id="s-supa-url" placeholder="https://xxxx.supabase.co"></div>
+    <div class="form-group"><label class="form-label">Supabase Anon Key</label><input class="form-input" id="s-supa-key" type="password" placeholder="eyJhbGci..."></div>
+
+    <!-- Backup & Export section (NEW) -->
+    <div class="settings-divider"></div>
+    <div class="settings-section-label">Backup &amp; Export</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="exportBackup()">&#11015; Export JSON Backup</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('restore-input').click()">&#11014; Restore from Backup</button>
+      <input type="file" id="restore-input" accept=".json" style="display:none" onchange="importBackup(event)">
+    </div>
+
+    <div class="form-footer"><button class="btn btn-ghost" onclick="closeSettingsModal()">Cancel</button><button class="btn btn-primary" onclick="saveSettingsModal()">Save &amp; Sync</button></div>
   </div></div>
 </div>
+
 <div class="toast" id="toast"></div>
+
 <script>
+// ================================================================
+// SPARK Admin — Upgraded JavaScript
+// New features are clearly marked with // ── [FEATURE NAME] ──
+// ================================================================
+
+// ── Config & sheet URLs (unchanged) ──────────────────────────────
 var SHEET='2PACX-1vR7vqT3yeUecPwtwWHBXZTLkrvqnq7MTBDFRbtfVRcHjSKCLxZeMJekvV5mRb8i72dWDf3D55SfQmAa';
 var CSV={sessions:'https://docs.google.com/spreadsheets/d/e/'+SHEET+'/pub?gid=0&single=true&output=csv',practitioners:'https://docs.google.com/spreadsheets/d/e/'+SHEET+'/pub?gid=135420663&single=true&output=csv',history:'https://docs.google.com/spreadsheets/d/e/'+SHEET+'/pub?gid=1394578292&single=true&output=csv'};
-var PX=[
-  function(u){return u;},
-  function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u);},
-  function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u);},
-  function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u);},
-  function(u){return 'https://thingproxy.freeboard.io/fetch/'+encodeURIComponent(u);},
-  function(u){return 'https://jsonp.afeld.me/?url='+encodeURIComponent(u);}
-];
+var PX=[function(u){return u;},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u);},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u);},function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u);},function(u){return 'https://thingproxy.freeboard.io/fetch/'+encodeURIComponent(u);},function(u){return 'https://jsonp.afeld.me/?url='+encodeURIComponent(u);}];
 var MH='claude-haiku-4-5-20251001',MS='claude-sonnet-4-20250514',DC=0.5;
 var WS=[{key:'kundalini',dow:1,time:'17:15',name:'Kundalini Yoga',practitioner:'Lut',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'jiujitsu_mon',dow:1,time:'18:30',name:'Jiu Jitsu',practitioner:'Davis',price:999,url:'https://www.ensokenya.com/enso-spark'},{key:'breathwork',dow:2,time:'18:30',name:'Breathwork',practitioner:'Vincent',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'hatha',dow:3,time:'18:30',name:'Hatha Kriya Yoga',practitioner:'Danny',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'jiujitsu_thu',dow:4,time:'18:30',name:'Jiu Jitsu',practitioner:'Davis',price:999,url:'https://www.ensokenya.com/enso-spark'},{key:'sound',dow:6,time:'16:30',name:'Sound Meditation',practitioner:'Anastancia',price:888,url:'https://www.ensokenya.com/enso-spark'},{key:'vinyasa',dow:0,time:'10:00',name:'Vinyasa Flow Yoga',practitioner:'Alex',price:888,url:'https://www.ensokenya.com/enso-spark'}];
+
+// ── State ─────────────────────────────────────────────────────────
 var sessions=[],practitioners=[],history=[],months=[],sessionHeaders=[];
 var contacts=JSON.parse(localStorage.getItem('spark_contacts')||'[]');
 var rsvpData=JSON.parse(localStorage.getItem('spark_rsvp')||'{}');
@@ -458,7 +617,111 @@ var studioName=localStorage.getItem('spark_studio_name')||'SPARK Studio';
 var studioPhone=localStorage.getItem('spark_wa_phone')||'';
 var selectedContacts=new Set(),selectedAudience=new Set(),weekOffset=0,refreshTimer=null;
 
+// ── [BACKEND PROXY] URL from settings ────────────────────────────
+var proxyURL=localStorage.getItem('spark_proxy_url')||'';
+
+// ── [SUPABASE] Client initialisation ─────────────────────────────
+var supabaseClient=null;
+function initSupabase(){
+  var url=localStorage.getItem('spark_supa_url')||'';
+  var key=localStorage.getItem('spark_supa_key')||'';
+  if(url&&key&&window.supabase){
+    try{
+      supabaseClient=window.supabase.createClient(url,key);
+      // Realtime subscriptions
+      supabaseClient.channel('contacts-changes')
+        .on('postgres_changes',{event:'*',schema:'public',table:'contacts'},function(){loadContactsFromSupabase();})
+        .subscribe();
+      supabaseClient.channel('rsvp-changes')
+        .on('postgres_changes',{event:'*',schema:'public',table:'rsvp_data'},function(){loadRsvpFromSupabase();})
+        .subscribe();
+    }catch(e){supabaseClient=null;}
+  }
+}
+
+// ── [SUPABASE] Load contacts from Supabase (falls back to localStorage) ──
+async function loadContactsFromSupabase(){
+  if(!supabaseClient)return;
+  try{
+    var res=await supabaseClient.from('contacts').select('*').order('added_at',{ascending:true});
+    if(res.error)throw res.error;
+    contacts=res.data.map(function(r){return{id:r.id,name:r.name,phone:r.phone,email:r.email,notes:r.notes,sessions:r.sessions||[],lastSeen:r.last_seen,addedAt:r.added_at};});
+    localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+    renderContactsTable();renderAudienceList();renderDashboard();
+  }catch(e){}
+}
+
+// ── [SUPABASE] Load RSVPs from Supabase ───────────────────────────
+async function loadRsvpFromSupabase(){
+  if(!supabaseClient)return;
+  try{
+    var res=await supabaseClient.from('rsvp_data').select('*');
+    if(res.error)throw res.error;
+    rsvpData={};
+    res.data.forEach(function(r){if(!rsvpData[r.session_id])rsvpData[r.session_id]=[];rsvpData[r.session_id].push({name:r.name,status:r.status,addedAt:r.added_at});});
+    localStorage.setItem('spark_rsvp',JSON.stringify(rsvpData));
+    renderRsvpTab();
+  }catch(e){}
+}
+
+// ── [SUPABASE] Save a contact (upsert) ───────────────────────────
+async function saveContactToSupabase(c){
+  if(!supabaseClient)return false;
+  try{
+    var res=await supabaseClient.from('contacts').upsert({id:c.id,name:c.name,phone:c.phone||'',email:c.email||'',notes:c.notes||'',sessions:c.sessions||[],last_seen:c.lastSeen||''},{onConflict:'id'});
+    if(res.error)throw res.error;
+    return true;
+  }catch(e){return false;}
+}
+
+// ── [SUPABASE] Delete a contact ───────────────────────────────────
+async function deleteContactFromSupabase(id){
+  if(!supabaseClient)return;
+  try{await supabaseClient.from('contacts').delete().eq('id',id);}catch(e){}
+}
+
+// ── [SUPABASE] Save RSVP ─────────────────────────────────────────
+async function saveRsvpToSupabase(sessionId,name,status){
+  if(!supabaseClient)return;
+  try{await supabaseClient.from('rsvp_data').upsert({session_id:sessionId,name:name,status:status},{onConflict:'session_id,name'});}catch(e){}
+}
+
+// ── [SUPABASE] Remove RSVP ────────────────────────────────────────
+async function removeRsvpFromSupabase(sessionId,name){
+  if(!supabaseClient)return;
+  try{await supabaseClient.from('rsvp_data').delete().eq('session_id',sessionId).eq('name',name);}catch(e){}
+}
+
+// ── [INDEXEDDB] Offline cache fallback ───────────────────────────
+var IDB_DB=null;
+function openIDB(){
+  if(!window.indexedDB)return;
+  var req=indexedDB.open('spark-offline',1);
+  req.onupgradeneeded=function(e){var db=e.target.result;if(!db.objectStoreNames.contains('cache'))db.createObjectStore('cache',{keyPath:'key'});};
+  req.onsuccess=function(e){IDB_DB=e.target.result;};
+}
+function idbSet(key,value){if(!IDB_DB)return;try{var tx=IDB_DB.transaction('cache','readwrite');tx.objectStore('cache').put({key:key,value:value});}catch(e){}}
+function idbGet(key){return new Promise(function(res){if(!IDB_DB){res(null);return;}try{var tx=IDB_DB.transaction('cache','readonly');var req=tx.objectStore('cache').get(key);req.onsuccess=function(){res(req.result?req.result.value:null);};req.onerror=function(){res(null);};}catch(e){res(null);}});}
+
+// ── [PWA] Service Worker registration ────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});
+}
+
+// ── [OFFLINE] Banner logic ────────────────────────────────────────
+function updateOfflineBanner(){
+  var banner=document.getElementById('offline-banner');
+  if(!banner)return;
+  if(!navigator.onLine){banner.classList.add('show');}else{banner.classList.remove('show');}
+}
+window.addEventListener('online',updateOfflineBanner);
+window.addEventListener('offline',updateOfflineBanner);
+
+// ── Boot ──────────────────────────────────────────────────────────
 window.onload=function(){
+  updateOfflineBanner();
+  openIDB();
+  initSupabase();
   if(apiKey&&adminName){
     document.getElementById('setup').style.display='none';
     document.getElementById('app').style.display='flex';
@@ -470,9 +733,9 @@ function completeSetup(){
   var key=document.getElementById('api-key-input').value.trim();
   var name=document.getElementById('admin-name-input').value.trim();
   var phone=document.getElementById('wa-input').value.trim();
-  if(!key||key.indexOf('sk-')<0){showToast('Enter a valid API key');return;}
   if(!name){showToast('Enter your name');return;}
-  localStorage.setItem('spark_apikey',key);
+  // Key is optional if proxy is configured later
+  if(key)localStorage.setItem('spark_apikey',key);
   localStorage.setItem('spark_admin_name',name);
   if(phone)localStorage.setItem('spark_wa_phone',phone);
   apiKey=key;adminName=name;studioPhone=phone;
@@ -483,37 +746,51 @@ function completeSetup(){
 
 async function init(){
   renderContactsTable();renderAudienceList();renderRsvpTab();renderWeeklyBlastPreview();
+  if(supabaseClient){await Promise.all([loadContactsFromSupabase(),loadRsvpFromSupabase()]);}
   await syncAll();
   if(refreshTimer)clearInterval(refreshTimer);
   refreshTimer=setInterval(syncAll,5*60*1000);
 }
 
+// ── Fetch with proxy routing (NEW: uses /api/sheets if proxyURL set) ──
 async function fetchURL(url){
-  var lastErr="";
+  // If proxy is configured, route through /api/sheets?tab=...
+  if(proxyURL){
+    var tab=url.includes('gid=0')?'sessions':url.includes('gid=135420663')?'practitioners':'history';
+    try{
+      var r=await fetch(proxyURL+'/api/sheets?tab='+tab,{signal:AbortSignal.timeout?AbortSignal.timeout(12000):undefined});
+      if(r.ok){var j=await r.json();return rowsToCSV(j.headers,j.rows);}
+    }catch(e){}
+  }
+  // Fallback: direct CSV proxy chain (original behaviour)
+  var lastErr='';
   for(var i=0;i<PX.length;i++){
     try{
-      var ctrl=new AbortController();
-      var timer=setTimeout(function(){ctrl.abort();},12000);
-      var r=await fetch(PX[i](url),{signal:ctrl.signal});
-      clearTimeout(timer);
-      if(!r.ok)throw new Error("HTTP "+r.status);
-      var t=await r.text();
-      if(t.trim().length>10&&t.indexOf(",")>=0)return t;
-    }catch(e){lastErr=e.message||"failed";}
+      var ctrl=new AbortController();var timer=setTimeout(function(){ctrl.abort();},12000);
+      var res=await fetch(PX[i](url),{signal:ctrl.signal});clearTimeout(timer);
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      var t=await res.text();if(t.trim().length>10&&t.indexOf(',')>=0)return t;
+    }catch(e){lastErr=e.message||'failed';}
   }
-  throw new Error("All proxies failed ("+lastErr+")");
+  // Final fallback: check IndexedDB cache
+  var cached=await idbGet('sheet_'+url);
+  if(cached)return cached;
+  throw new Error('All proxies failed ('+lastErr+')');
 }
 
+// Helper: convert sheets API response back to CSV string format
+function rowsToCSV(headers,rows){
+  var lines=[headers.join(',')];
+  rows.forEach(function(row){lines.push(headers.map(function(h){var v=(row[h]||'');return v.indexOf(',')>=0?'"'+v+'"':v;}).join(','));});
+  return lines.join('\n');
+}
+
+// CSV parsing (unchanged)
 function parseCSV(text,sh){
   var lines=text.trim().split(/\r?\n/);if(lines.length<2)return[];
   var hdrs=splitCSV(lines[0]).map(function(h){return h.trim().replace(/^"|"$/g,'');});
   if(sh)sessionHeaders=hdrs;
-  return lines.slice(1).map(function(line){
-    var cols=splitCSV(line),obj={};
-    hdrs.forEach(function(h,i){obj[h]=(cols[i]||'').trim().replace(/^"|"$/g,'');});
-    obj.__cols=cols.map(function(c){return(c||'').trim().replace(/^"|"$/g,'');});
-    return obj;
-  }).filter(function(r){return Object.values(r).some(function(v){return typeof v==='string'&&v.trim()!=='';});});
+  return lines.slice(1).map(function(line){var cols=splitCSV(line),obj={};hdrs.forEach(function(h,i){obj[h]=(cols[i]||'').trim().replace(/^"|"$/g,'');});obj.__cols=cols.map(function(c){return(c||'').trim().replace(/^"|"$/g,'');});return obj;}).filter(function(r){return Object.values(r).some(function(v){return typeof v==='string'&&v.trim()!=='';});});
 }
 function splitCSV(line){var res=[],cur='',q=false;for(var i=0;i<line.length;i++){var c=line[i];if(c==='"')q=!q;else if(c===','&&!q){res.push(cur);cur='';}else cur+=c;}res.push(cur);return res;}
 function f(row){var keys=Array.prototype.slice.call(arguments,1);for(var i=0;i<keys.length;i++){var k=keys[i];if(row[k]!==undefined&&row[k].trim()!=='')return row[k].trim();var fk=Object.keys(row).find(function(rk){return rk.trim().toLowerCase()===k.toLowerCase();});if(fk&&row[fk].trim()!=='')return row[fk].trim();}return '';}
@@ -523,24 +800,24 @@ function ini(s){return(s||'??').slice(0,2).toUpperCase();}
 function getPractRecv(row){var b=n(f(row,'Pract Recv.','Pract Recv','Pract. Recv','Practitioner Recv','Practitioner Received','Pract Recv AUTO'));if(b>0)return b;var idx=sessionHeaders.findIndex(function(h){return['pract recv','pract recv.','pract. recv','practitioner recv','practitioner received'].indexOf(h.toLowerCase().trim())>=0;});return row.__cols&&row.__cols[idx>=0?idx:8]?n(row.__cols[idx>=0?idx:8]):0;}
 function daysUntil(date){if(!date)return 999;var now=new Date();now.setHours(0,0,0,0);var d=new Date(date);d.setHours(0,0,0,0);if(isNaN(d))return 999;return Math.round((d-now)/(1000*60*60*24));}
 
+// ── Sync (caches to IndexedDB on success) ────────────────────────
 async function syncAll(){
   setStatus('loading','Syncing...');
-  // Try fetching one sheet at a time so partial failures still show some data
   var ok=0;
   try{
     var st=await fetchURL(CSV.sessions);
     sessions=parseCSV(st,true).filter(function(r){var m=f(r,'Month','month');return f(r,'Date','date')&&m&&m.indexOf('1899')<0&&m.trim()!=='';});
-    ok++;
+    idbSet('sheet_'+CSV.sessions,st);ok++;
   }catch(e){showToast('Sessions fetch failed - check sheet is published');}
   try{
     var pt=await fetchURL(CSV.practitioners);
     practitioners=parseCSV(pt).filter(function(r){return f(r,'Name','Practitioner Name','name')!=='';});
-    ok++;
+    idbSet('sheet_'+CSV.practitioners,pt);ok++;
   }catch(e){}
   try{
     var ht=await fetchURL(CSV.history);
     history=parseCSV(ht).filter(function(r){return f(r,'Practitioner','practitioner')!=='';});
-    ok++;
+    idbSet('sheet_'+CSV.history,ht);ok++;
   }catch(e){}
 
   if(ok===0){
@@ -549,11 +826,9 @@ async function syncAll(){
     document.getElementById('brief-title').textContent='Sync Failed';
     return;
   }
-
-  var set=new Set();
-  sessions.forEach(function(r){var m=f(r,'Month','month');if(m&&m.indexOf('1899')<0)set.add(m.trim());});
+  var set=new Set();sessions.forEach(function(r){var m=f(r,'Month','month');if(m&&m.indexOf('1899')<0)set.add(m.trim());});
   months=Array.from(set).sort(function(a,b){return new Date('1 '+a)-new Date('1 '+b);});
-  setStatus(ok===3?'live':'loading', ok===3?('Live '+new Date().toLocaleTimeString()):(ok+'/3 sheets loaded'));
+  setStatus(ok===3?'live':'loading',ok===3?('Live '+new Date().toLocaleTimeString()):(ok+'/3 sheets loaded'));
   renderDashboard();renderReportsTab();populateReportMonths();checkAutoScheduled();
   var today=new Date().toDateString();
   if(localStorage.getItem('spark_brief_date')!==today){generateDailyBrief();localStorage.setItem('spark_brief_date',today);}
@@ -568,6 +843,7 @@ function calcBalance(name,month){
   return{totalComm:tc,totalDirect:td,netOwed:Math.max(0,tc-td),rows:rows};
 }
 
+// Dashboard render (stat values now replace skeleton divs)
 function renderDashboard(){
   document.getElementById('s-sessions').textContent=sessions.length;
   document.getElementById('s-clients').textContent=contacts.length;
@@ -586,42 +862,24 @@ function renderFollowUp(){
   var needs=contacts.filter(function(c){if(!c.lastSeen)return false;var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));return !isNaN(d)&&(now-d)/(1000*60*60*24)>=21;}).slice(0,5);
   document.getElementById('follow-badge').textContent=needs.length?needs.length+' clients':'all clear';
   if(!needs.length){document.getElementById('follow-list').innerHTML='<div class="empty">All clients followed up recently.</div>';return;}
-  document.getElementById('follow-list').innerHTML=needs.map(function(c){
-    var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));
-    var days=Math.round((now-d)/(1000*60*60*24));
-    var msg=encodeURIComponent('Hi '+c.name.split(' ')[0]+' - Just checking in. Hope to see you at '+studioName+' soon! - '+adminName);
-    return '<div class="follow-row"><div class="avatar">'+ini(c.name)+'</div><div style="flex:1"><div class="follow-name">'+c.name+'</div><div class="follow-meta">'+(c.lastSeen||'unknown')+'</div></div><span class="follow-reason">'+days+'d ago</span>'+(c.phone?'<a class="wa-btn" href="https://wa.me/'+c.phone+'?text='+msg+'" target="_blank">WhatsApp</a>':'')+'</div>';
-  }).join('');
+  document.getElementById('follow-list').innerHTML=needs.map(function(c){var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));var days=Math.round((now-d)/(1000*60*60*24));var msg=encodeURIComponent('Hi '+c.name.split(' ')[0]+' - Just checking in. Hope to see you at '+studioName+' soon! - '+adminName);return '<div class="follow-row"><div class="avatar">'+ini(c.name)+'</div><div style="flex:1"><div class="follow-name">'+c.name+'</div><div class="follow-meta">'+(c.lastSeen||'unknown')+'</div></div><span class="follow-reason">'+days+'d ago</span>'+(c.phone?'<a class="wa-btn" href="https://wa.me/'+c.phone+'?text='+msg+'" target="_blank">WhatsApp</a>':'')+'</div>';}).join('');
 }
 
 function renderUpcomingMini(){
   var up=ensoSessions.filter(function(s){return daysUntil(s.date)>=0;}).slice(0,4);
   document.getElementById('upcoming-badge').textContent=up.length?up.length+' upcoming':'none added';
   if(!up.length){document.getElementById('upcoming-mini').innerHTML='<div class="empty" style="padding:12px">No upcoming sessions. Add them in the RSVP tab.</div>';return;}
-  document.getElementById('upcoming-mini').innerHTML=up.map(function(s){
-    var days=daysUntil(s.date);var rc=(rsvpData[s.id]||[]).filter(function(r){return r.status==='confirmed';}).length;
-    var pc=days<=1?'days-badge urgent':days<=3?'days-badge soon':'days-badge normal';
-    return '<div class="sess-row"><div class="sess-info"><div class="sess-name" style="font-size:13px">'+s.name+'</div><div class="sess-meta">'+(s.dateStr||'')+(s.time?' '+s.time:'')+(s.practitioner?' with '+s.practitioner:'')+'</div></div><div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--emerald)">'+rc+' RSVPs</div><span class="'+pc+'">'+(days===0?'TODAY':days===1?'TOMORROW':days+'d')+'</span></div></div>';
-  }).join('');
+  document.getElementById('upcoming-mini').innerHTML=up.map(function(s){var days=daysUntil(s.date);var rc=(rsvpData[s.id]||[]).filter(function(r){return r.status==='confirmed';}).length;var pc=days<=1?'days-badge urgent':days<=3?'days-badge soon':'days-badge normal';return '<div class="sess-row"><div class="sess-info"><div class="sess-name" style="font-size:13px">'+s.name+'</div><div class="sess-meta">'+(s.dateStr||'')+(s.time?' '+s.time:'')+(s.practitioner?' with '+s.practitioner:'')+'</div></div><div style="text-align:right"><div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--emerald)">'+rc+' RSVPs</div><span class="'+pc+'">'+(days===0?'TODAY':days===1?'TOMORROW':days+'d')+'</span></div></div>';}).join('');
 }
 
 function fillTemplate(){var key=document.getElementById('ns-template').value;var t=WS.find(function(s){return s.key===key;});if(!t)return;document.getElementById('ns-type').value=t.name;document.getElementById('ns-time').value=t.time;document.getElementById('ns-pract').value=t.practitioner;document.getElementById('ns-price').value=t.price;document.getElementById('ns-url').value=t.url;var today=new Date();var diff=(t.dow-today.getDay()+7)%7||7;var next=new Date(today);next.setDate(today.getDate()+diff);document.getElementById('ns-date').value=next.toISOString().split('T')[0];}
 
 function generateWeek(wo){
-  var today=new Date();var monday=new Date(today);var dow=today.getDay();monday.setDate(today.getDate()-(dow===0?-6:1-dow)+(wo*7));monday.setHours(0,0,0,0);
-  var added=0;
-  WS.forEach(function(t){
-    var sd=new Date(monday);var off=t.dow===0?6:t.dow-1;sd.setDate(monday.getDate()+off);
-    if(sd<new Date(today.getFullYear(),today.getMonth(),today.getDate()))return;
-    var ds=sd.toISOString().split('T')[0];
-    if(ensoSessions.find(function(s){var x=new Date(s.date);return x.toISOString().split('T')[0]===ds&&s.name===t.name;}))return;
-    var fd=new Date(sd.getFullYear(),sd.getMonth(),sd.getDate(),parseInt(t.time.split(':')[0]),parseInt(t.time.split(':')[1]));
-    ensoSessions.push({id:'sess-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),name:t.name,date:fd,dateStr:fd.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),time:t.time,practitioner:t.practitioner,price:t.price,url:t.url});
-    added++;
-  });
+  var today=new Date();var monday=new Date(today);var dow=today.getDay();monday.setDate(today.getDate()-(dow===0?-6:1-dow)+(wo*7));monday.setHours(0,0,0,0);var added=0;
+  WS.forEach(function(t){var sd=new Date(monday);var off=t.dow===0?6:t.dow-1;sd.setDate(monday.getDate()+off);if(sd<new Date(today.getFullYear(),today.getMonth(),today.getDate()))return;var ds=sd.toISOString().split('T')[0];if(ensoSessions.find(function(s){var x=new Date(s.date);return x.toISOString().split('T')[0]===ds&&s.name===t.name;}))return;var fd=new Date(sd.getFullYear(),sd.getMonth(),sd.getDate(),parseInt(t.time.split(':')[0]),parseInt(t.time.split(':')[1]));ensoSessions.push({id:'sess-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),name:t.name,date:fd,dateStr:fd.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),time:t.time,practitioner:t.practitioner,price:t.price,url:t.url});added++;});
   ensoSessions.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
   localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));
-  renderRsvpTab();renderUpcomingMini();checkAutoScheduled();renderWeeklyBlastPreview();
+  renderRsvpTab();renderCalendarView();renderUpcomingMini();checkAutoScheduled();renderWeeklyBlastPreview();
   showToast(added>0?added+' sessions added':'Sessions already exist for this week');
 }
 
@@ -638,37 +896,85 @@ function saveSession(){
   else ensoSessions.push({id:'sess-'+Date.now(),name:type,date:date,dateStr:dateStr,time:time,practitioner:pract,price:price,url:url||'https://www.ensokenya.com/enso-spark'});
   ensoSessions.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
   localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));
-  closeAddSession();renderRsvpTab();renderUpcomingMini();checkAutoScheduled();renderWeeklyBlastPreview();showToast(editId?'Session updated':'Session added');
+  closeAddSession();renderRsvpTab();renderCalendarView();renderUpcomingMini();checkAutoScheduled();renderWeeklyBlastPreview();showToast(editId?'Session updated':'Session added');
 }
 
-function deleteSession(id){if(!confirm('Remove this session?'))return;ensoSessions=ensoSessions.filter(function(s){return s.id!==id;});localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));renderRsvpTab();renderUpcomingMini();renderWeeklyBlastPreview();showToast('Removed');}
+function deleteSession(id){if(!confirm('Remove this session?'))return;ensoSessions=ensoSessions.filter(function(s){return s.id!==id;});localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));renderRsvpTab();renderCalendarView();renderUpcomingMini();renderWeeklyBlastPreview();showToast('Removed');}
+
+// ── [FULLCALENDAR] Calendar view toggle (NEW) ────────────────────
+var calendarView=false;var fcInstance=null;
+
+function toggleCalendarView(){
+  calendarView=!calendarView;
+  var btn=document.getElementById('cal-toggle-btn');
+  var calEl=document.getElementById('rsvp-calendar');
+  var listEl=document.getElementById('rsvp-sessions-list');
+  if(calendarView){
+    btn.textContent='&#9776; List View';
+    calEl.style.display='block';
+    listEl.style.display='none';
+    renderCalendarView();
+  }else{
+    btn.textContent='&#128197; Calendar View';
+    calEl.style.display='none';
+    listEl.style.display='block';
+  }
+}
+
+function renderCalendarView(){
+  if(!calendarView)return;
+  var calEl=document.getElementById('rsvp-calendar');
+  if(!calEl||!window.FullCalendar)return;
+  if(fcInstance){fcInstance.destroy();fcInstance=null;}
+  var events=ensoSessions.map(function(s){
+    var rsvps=(rsvpData[s.id]||[]).filter(function(r){return r.status==='confirmed';}).length;
+    return{id:s.id,title:s.name+(rsvps?' ('+rsvps+' RSVPs)':''),start:new Date(s.date).toISOString(),extendedProps:{session:s},backgroundColor:rsvps>0?'#4ade80':'#3d5048',borderColor:'transparent',textColor:rsvps>0?'#050d08':'#eef2f0'};
+  });
+  fcInstance=new FullCalendar.Calendar(calEl,{
+    initialView:'dayGridMonth',
+    headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek'},
+    events:events,
+    eventClick:function(info){openRsvpModal(info.event.id);},
+    height:'auto',
+    themeSystem:'standard',
+    dayMaxEvents:3,
+    eventTimeFormat:{hour:'2-digit',minute:'2-digit',hour12:false}
+  });
+  fcInstance.render();
+}
 
 function renderRsvpTab(){
   var dl=document.getElementById('contacts-datalist');if(dl)dl.innerHTML=contacts.map(function(c){return '<option value="'+c.name+'">';}).join('');
   var up=ensoSessions.filter(function(s){return daysUntil(s.date)>=-1;}).slice(0,30);
   var badge=document.getElementById('rsvp-total');if(badge)badge.textContent=up.length+' session'+(up.length!==1?'s':'');
   if(!up.length){document.getElementById('rsvp-sessions-list').innerHTML='<div class="empty"><div class="empty-icon">&#128203;</div>No sessions. Tap Add Session or generate this week.<br><br><a href="https://www.ensokenya.com/enso-spark" target="_blank" style="color:var(--blue)">View Enso schedule</a></div>';return;}
-  document.getElementById('rsvp-sessions-list').innerHTML=up.map(function(s){
-    var sid=s.id;var days=daysUntil(s.date);var rsvps=rsvpData[sid]||[];
-    var conf=rsvps.filter(function(r){return r.status==='confirmed';});var pend=rsvps.filter(function(r){return r.status==='pending';});
-    var db=days===0?'<span class="days-badge urgent">TODAY</span>':days===1?'<span class="days-badge urgent">TOMORROW</span>':days<=3?'<span class="days-badge soon">'+days+' days</span>':days<=7?'<span class="days-badge normal">'+days+' days</span>':'<span class="days-badge normal">'+days+'d</span>';
-    var chips=conf.map(function(r){var nm=r.name.replace(/'/g,'&#39;');return '<span class="rsvp-chip">'+r.name+' <button onclick="removeRsvp(\''+sid+'\',\''+nm+'\')">x</button></span>';}).concat(pend.map(function(r){var nm=r.name.replace(/'/g,'&#39;');return '<span class="rsvp-chip pending">'+r.name+' <button onclick="removeRsvp(\''+sid+'\',\''+nm+'\')">x</button></span>';})).join('');
-    return '<div class="upcoming-session" id="sess-'+sid+'"><div class="us-header"><div><div class="us-name">'+s.name+'</div><div class="us-meta">'+(s.dateStr||'')+(s.time?' '+s.time:'')+(s.practitioner?' with '+s.practitioner:'')+(s.price?' KES '+s.price:'')+'</div></div><div style="display:flex;align-items:center;gap:6px">'+db+'<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--emerald)">'+conf.length+' confirmed</span></div></div><div class="us-actions"><button class="btn btn-primary btn-sm" onclick="openRsvpModal(\''+sid+'\')">+ Attendee</button>'+(s.url?'<a class="btn btn-ghost btn-sm" href="'+s.url+'" target="_blank">Book Page</a>':'')+'<button class="edit-btn" onclick="openEditSession(\''+sid+'\')" style="padding:5px 9px">Edit</button><button class="edit-btn" onclick="deleteSession(\''+sid+'\')" style="padding:5px 9px;color:var(--red)">X</button></div>'+(rsvps.length?'<div class="rsvp-list">'+chips+'</div>':'')+'</div>';
-  }).join('');
+  document.getElementById('rsvp-sessions-list').innerHTML=up.map(function(s){var sid=s.id;var days=daysUntil(s.date);var rsvps=rsvpData[sid]||[];var conf=rsvps.filter(function(r){return r.status==='confirmed';});var pend=rsvps.filter(function(r){return r.status==='pending';});var db=days===0?'<span class="days-badge urgent">TODAY</span>':days===1?'<span class="days-badge urgent">TOMORROW</span>':days<=3?'<span class="days-badge soon">'+days+' days</span>':days<=7?'<span class="days-badge normal">'+days+' days</span>':'<span class="days-badge normal">'+days+'d</span>';var chips=conf.map(function(r){var nm=r.name.replace(/'/g,'&#39;');return '<span class="rsvp-chip">'+r.name+' <button onclick="removeRsvp(\''+sid+'\',\''+nm+'\')">x</button></span>';}).concat(pend.map(function(r){var nm=r.name.replace(/'/g,'&#39;');return '<span class="rsvp-chip pending">'+r.name+' <button onclick="removeRsvp(\''+sid+'\',\''+nm+'\')">x</button></span>';})).join('');return '<div class="upcoming-session" id="sess-'+sid+'"><div class="us-header"><div><div class="us-name">'+s.name+'</div><div class="us-meta">'+(s.dateStr||'')+(s.time?' '+s.time:'')+(s.practitioner?' with '+s.practitioner:'')+(s.price?' KES '+s.price:'')+'</div></div><div style="display:flex;align-items:center;gap:6px">'+db+'<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--emerald)">'+conf.length+' confirmed</span></div></div><div class="us-actions"><button class="btn btn-primary btn-sm" onclick="openRsvpModal(\''+sid+'\')">+ Attendee</button>'+(s.url?'<a class="btn btn-ghost btn-sm" href="'+s.url+'" target="_blank">Book Page</a>':'')+'<button class="edit-btn" onclick="openEditSession(\''+sid+'\')" style="padding:5px 9px">Edit</button><button class="edit-btn" onclick="deleteSession(\''+sid+'\')" style="padding:5px 9px;color:var(--red)">X</button></div>'+(rsvps.length?'<div class="rsvp-list">'+chips+'</div>':'')+'</div>';}).join('');
 }
 
 function openRsvpModal(id){document.getElementById('rsvp-session-id').value=id;document.getElementById('rsvp-name').value='';document.getElementById('rsvp-status').value='confirmed';document.getElementById('rsvp-modal').classList.add('open');}
 function closeRsvpModal(){document.getElementById('rsvp-modal').classList.remove('open');}
+
+// saveRsvp — now also writes to Supabase (NEW)
 function saveRsvp(){
   var sid=document.getElementById('rsvp-session-id').value;var name=document.getElementById('rsvp-name').value.trim();var status=document.getElementById('rsvp-status').value;
   if(!name){showToast('Enter a name');return;}if(!rsvpData[sid])rsvpData[sid]=[];
   if(rsvpData[sid].find(function(r){return r.name.toLowerCase()===name.toLowerCase();})){showToast('Already added');return;}
-  rsvpData[sid].push({name:name,status:status,addedAt:new Date().toISOString()});localStorage.setItem('spark_rsvp',JSON.stringify(rsvpData));
+  rsvpData[sid].push({name:name,status:status,addedAt:new Date().toISOString()});
+  localStorage.setItem('spark_rsvp',JSON.stringify(rsvpData));
+  saveRsvpToSupabase(sid,name,status); // non-blocking
   var sess=ensoSessions.find(function(s){return s.id===sid;});
   if(sess){var ct=contacts.find(function(c){return c.name.toLowerCase()===name.toLowerCase();});if(ct){if(!ct.sessions)ct.sessions=[];if(!ct.sessions.some(function(s){return s.toLowerCase()===sess.name.toLowerCase();}))ct.sessions.push(sess.name);ct.lastSeen=sess.dateStr;}else{contacts.push({id:Date.now().toString()+Math.random(),name:name,phone:'',email:'',notes:'Added from RSVP',sessions:[sess.name],lastSeen:sess.dateStr,addedAt:new Date().toISOString()});}localStorage.setItem('spark_contacts',JSON.stringify(contacts));}
-  closeRsvpModal();renderRsvpTab();showToast(name+' added');
+  closeRsvpModal();renderRsvpTab();renderCalendarView();showToast(name+' added');
 }
-function removeRsvp(sid,name){if(!rsvpData[sid])return;rsvpData[sid]=rsvpData[sid].filter(function(r){return r.name!==name;});localStorage.setItem('spark_rsvp',JSON.stringify(rsvpData));renderRsvpTab();}
+
+// removeRsvp — also removes from Supabase (NEW)
+function removeRsvp(sid,name){
+  if(!rsvpData[sid])return;
+  rsvpData[sid]=rsvpData[sid].filter(function(r){return r.name!==name;});
+  localStorage.setItem('spark_rsvp',JSON.stringify(rsvpData));
+  removeRsvpFromSupabase(sid,name); // non-blocking
+  renderRsvpTab();renderCalendarView();
+}
 
 function checkAutoScheduled(){
   var today=new Date();today.setHours(0,0,0,0);var target=new Date(today);target.setDate(target.getDate()+2);
@@ -680,24 +986,10 @@ function checkAutoScheduled(){
   if(sched){sched.innerHTML=s2.map(function(s){var rv=rsvpData[s.id]||[];return '<div class="bcast-session" style="padding:12px 0"><div class="bcast-sess-info"><div class="bcast-sess-name" style="color:var(--white)">'+s.name+'</div><div class="bcast-sess-meta">'+(s.dateStr||'')+' '+rv.length+' RSVPs</div></div><button class="send-now-btn" onclick="showTab(\'broadcast\')">Weekly Blast</button></div>';}).join('');}
 }
 
-function getWeekSessions(off){
-  var today=new Date();today.setHours(0,0,0,0);var dow=today.getDay();var mon=new Date(today);mon.setDate(today.getDate()-(dow===0?6:dow-1)+(off*7));var sun=new Date(mon);sun.setDate(mon.getDate()+6);
-  return ensoSessions.filter(function(s){var d=new Date(s.date);d.setHours(0,0,0,0);return d>=mon&&d<=sun;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
-}
-function getWeekLabel(off){
-  var today=new Date();today.setHours(0,0,0,0);var dow=today.getDay();var mon=new Date(today);mon.setDate(today.getDate()-(dow===0?6:dow-1)+(off*7));var sun=new Date(mon);sun.setDate(mon.getDate()+6);var o={day:'numeric',month:'short'};
-  if(off===0)return 'This Week ('+mon.toLocaleDateString('en-GB',o)+' - '+sun.toLocaleDateString('en-GB',o)+')';
-  if(off===1)return 'Next Week ('+mon.toLocaleDateString('en-GB',o)+' - '+sun.toLocaleDateString('en-GB',o)+')';
-  return mon.toLocaleDateString('en-GB',o)+' - '+sun.toLocaleDateString('en-GB',o);
-}
+function getWeekSessions(off){var today=new Date();today.setHours(0,0,0,0);var dow=today.getDay();var mon=new Date(today);mon.setDate(today.getDate()-(dow===0?6:dow-1)+(off*7));var sun=new Date(mon);sun.setDate(mon.getDate()+6);return ensoSessions.filter(function(s){var d=new Date(s.date);d.setHours(0,0,0,0);return d>=mon&&d<=sun;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});}
+function getWeekLabel(off){var today=new Date();today.setHours(0,0,0,0);var dow=today.getDay();var mon=new Date(today);mon.setDate(today.getDate()-(dow===0?6:dow-1)+(off*7));var sun=new Date(mon);sun.setDate(mon.getDate()+6);var o={day:'numeric',month:'short'};if(off===0)return 'This Week ('+mon.toLocaleDateString('en-GB',o)+' - '+sun.toLocaleDateString('en-GB',o)+')';if(off===1)return 'Next Week ('+mon.toLocaleDateString('en-GB',o)+' - '+sun.toLocaleDateString('en-GB',o)+')';return mon.toLocaleDateString('en-GB',o)+' - '+sun.toLocaleDateString('en-GB',o);}
 function shiftWeek(dir){weekOffset+=dir;renderWeeklyBlastPreview();}
-function renderWeeklyBlastPreview(){
-  var ws=getWeekSessions(weekOffset);var lbl=document.getElementById('week-label');var cnt=document.getElementById('weekly-sess-count');var prev=document.getElementById('weekly-sessions-preview');
-  if(lbl)lbl.textContent=getWeekLabel(weekOffset);if(cnt)cnt.textContent=ws.length+' session'+(ws.length!==1?'s':'');if(!prev)return;
-  if(!ws.length){prev.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0">No sessions this week. Go to RSVP tab and tap This Week or Next Week to generate sessions.</div>';return;}
-  var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  prev.innerHTML=ws.map(function(s){var d=new Date(s.date);var days=daysUntil(s.date);var rc=(rsvpData[s.id]||[]).filter(function(r){return r.status==='confirmed';}).length;var dc=days<=1?'var(--red)':days<=3?'var(--gold)':'var(--emerald)';return '<div class="week-session-row"><div class="week-day-box"><div class="week-day-name">'+DN[d.getDay()]+'</div><div class="week-day-num" style="color:'+dc+'">'+d.getDate()+'</div></div><div class="week-sess-info"><div class="week-sess-name">'+s.name+'</div><div class="week-sess-meta">'+(s.time||'TBC')+' with '+(s.practitioner||studioName)+' | KES '+(s.price||888)+'</div></div><div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--emerald)">'+rc+' RSVPs</div></div>';}).join('');
-}
+function renderWeeklyBlastPreview(){var ws=getWeekSessions(weekOffset);var lbl=document.getElementById('week-label');var cnt=document.getElementById('weekly-sess-count');var prev=document.getElementById('weekly-sessions-preview');if(lbl)lbl.textContent=getWeekLabel(weekOffset);if(cnt)cnt.textContent=ws.length+' session'+(ws.length!==1?'s':'');if(!prev)return;if(!ws.length){prev.innerHTML='<div style="font-size:12px;color:var(--muted);padding:8px 0">No sessions this week. Go to RSVP tab and tap This Week or Next Week to generate sessions.</div>';return;}var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];prev.innerHTML=ws.map(function(s){var d=new Date(s.date);var days=daysUntil(s.date);var rc=(rsvpData[s.id]||[]).filter(function(r){return r.status==='confirmed';}).length;var dc=days<=1?'var(--red)':days<=3?'var(--gold)':'var(--emerald)';return '<div class="week-session-row"><div class="week-day-box"><div class="week-day-name">'+DN[d.getDay()]+'</div><div class="week-day-num" style="color:'+dc+'">'+d.getDate()+'</div></div><div class="week-sess-info"><div class="week-sess-name">'+s.name+'</div><div class="week-sess-meta">'+(s.time||'TBC')+' with '+(s.practitioner||studioName)+' | KES '+(s.price||888)+'</div></div><div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--emerald)">'+rc+' RSVPs</div></div>';}).join('');}
 
 async function generateWeeklyBlast(){
   if(!selectedAudience.size){showToast('Select at least one contact');return;}
@@ -711,15 +1003,18 @@ async function generateWeeklyBlast(){
   var noteBlock=note?note+'\n\n':'';
   var msgs=sel.map(function(c){var fn=c.name.split(' ')[0];return{contact:c,text:'Hi '+fn+'!\n\nHere is your weekly wellness schedule at *'+studioName+'* - '+wl+':\n\n'+schedLines+'\n\n'+noteBlock+'All sessions are at *Jaffery Sports Club Pavilion, 1st Floor, Lavington, Nairobi*.\nSpots are limited - please book early to secure your place!\n\nWarm regards,\n'+adminName+' | '+studioName};});
   renderMsgs(msgs);
-  try{
-    var system='You are the community manager for '+studioName+', a wellness studio in Nairobi. Write a personalised 2-sentence opening for each client by name, mentioning a class they might enjoy. Return ONLY a JSON array: [{"name":"...","intro":"..."}]. No markdown.';
-    var cd=sel.map(function(c){return{name:c.name,sessions:(c.sessions||[]).join(', ')||'various'};});
-    var batch=await batchAI(system,cd,'Week: '+wl+(note?' Note: '+note:''),'Weekly Schedule');
-    if(batch){sel.forEach(function(c,i){var fn=c.name.split(' ')[0];var found=batch.find(function(b){return b.name&&b.name.toLowerCase().indexOf(fn.toLowerCase())>=0;});if(found&&found.intro)msgs[i].text=found.intro+'\n\n*'+studioName+' - Weekly Wellness Schedule*\n\n'+schedLines+'\n\n'+noteBlock+'Location: *1st Floor Pavilion, Jaffery Sports Club, Lavington*\nSpots are limited - book early!\n\nWarm regards,\n'+adminName+' | '+studioName;});renderMsgs(msgs);showToast(msgs.length+' personalised messages ready');}
+  try{var system='You are the community manager for '+studioName+', a wellness studio in Nairobi. Write a personalised 2-sentence opening for each client by name, mentioning a class they might enjoy. Return ONLY a JSON array: [{"name":"...","intro":"..."}]. No markdown.';var cd=sel.map(function(c){return{name:c.name,sessions:(c.sessions||[]).join(', ')||'various'};});var batch=await batchAI(system,cd,'Week: '+wl+(note?' Note: '+note:''),'Weekly Schedule');if(batch){sel.forEach(function(c,i){var fn=c.name.split(' ')[0];var found=batch.find(function(b){return b.name&&b.name.toLowerCase().indexOf(fn.toLowerCase())>=0;});if(found&&found.intro)msgs[i].text=found.intro+'\n\n*'+studioName+' - Weekly Wellness Schedule*\n\n'+schedLines+'\n\n'+noteBlock+'Location: *1st Floor Pavilion, Jaffery Sports Club, Lavington*\nSpots are limited - book early!\n\nWarm regards,\n'+adminName+' | '+studioName;});renderMsgs(msgs);showToast(msgs.length+' personalised messages ready');}
   }catch(e){showToast(msgs.length+' messages ready');}
 }
 
 function clearAudience(){selectedAudience.clear();document.querySelectorAll('.audience-item').forEach(function(el){el.classList.remove('selected');var cb=el.querySelector('input');if(cb)cb.checked=false;});document.getElementById('aud-count').textContent='0 selected';}
+
+// ── [DEBOUNCED SEARCH] 300ms debounce on contacts search (NEW) ────
+var searchDebounceTimer=null;
+function debouncedSearch(){
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer=setTimeout(function(){renderContacts();},300);
+}
 
 function renderContactsTable(){
   var search=((document.getElementById('contact-search')||{}).value||'').toLowerCase();
@@ -727,11 +1022,7 @@ function renderContactsTable(){
   var filtered=contacts.filter(function(c){var ms=!search||(c.name||'').toLowerCase().indexOf(search)>=0||(c.phone||'').indexOf(search)>=0;var mf=!filter||(c.sessions||[]).some(function(s){return s.toLowerCase().indexOf(filter.toLowerCase())>=0;});return ms&&mf;});
   var tbody=document.getElementById('contacts-tbody');if(!tbody)return;
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">&#128101;</div>No contacts. Tap + Add to get started.</div></td></tr>';return;}
-  tbody.innerHTML=filtered.map(function(c){
-    var tags=(c.sessions||[]).map(function(s){return '<span class="session-tag">'+s+'</span>';}).join('');
-    var msg=encodeURIComponent('Hi '+(c.name||'').split(' ')[0]+'! - '+adminName+', '+studioName);
-    return '<tr data-id="'+c.id+'"><td><input type="checkbox" '+(selectedContacts.has(c.id)?'checked':'')+' onchange="toggleContactSelect(\''+c.id+'\',this)"></td><td><div class="name-cell"><div class="avatar">'+ini(c.name)+'</div><div><div class="contact-name">'+c.name+'</div><div class="contact-meta">'+(c.notes||'')+'</div></div></div></td><td><span class="mono">'+(c.phone||'none')+'</span></td><td>'+(tags||'<span style="color:var(--muted2);font-size:11px">none</span>')+'</td><td><span class="mono">'+(c.lastSeen||'none')+'</span></td><td><div class="action-cell">'+(c.phone?'<a class="wa-btn" href="https://wa.me/'+c.phone+'?text='+msg+'" target="_blank">WhatsApp</a>':'')+(c.email?'<a class="em-btn" href="mailto:'+c.email+'" target="_blank">Email</a>':'')+'<button class="edit-btn" onclick="editContact(\''+c.id+'\')">Edit</button><button class="edit-btn" onclick="deleteContact(\''+c.id+'\')" style="color:var(--red)">X</button></div></td></tr>';
-  }).join('');
+  tbody.innerHTML=filtered.map(function(c){var tags=(c.sessions||[]).map(function(s){return '<span class="session-tag">'+s+'</span>';}).join('');var msg=encodeURIComponent('Hi '+(c.name||'').split(' ')[0]+'! - '+adminName+', '+studioName);return '<tr data-id="'+c.id+'"><td><input type="checkbox" '+(selectedContacts.has(c.id)?'checked':'')+' onchange="toggleContactSelect(\''+c.id+'\',this)"></td><td><div class="name-cell"><div class="avatar">'+ini(c.name)+'</div><div><div class="contact-name">'+c.name+'</div><div class="contact-meta">'+(c.notes||'')+'</div></div></div></td><td><span class="mono">'+(c.phone||'none')+'</span></td><td>'+(tags||'<span style="color:var(--muted2);font-size:11px">none</span>')+'</td><td><span class="mono">'+(c.lastSeen||'none')+'</span></td><td><div class="action-cell">'+(c.phone?'<a class="wa-btn" href="https://wa.me/'+c.phone+'?text='+msg+'" target="_blank">WhatsApp</a>':'')+(c.email?'<a class="em-btn" href="mailto:'+c.email+'" target="_blank">Email</a>':'')+'<button class="edit-btn" onclick="editContact(\''+c.id+'\')">Edit</button><button class="edit-btn" onclick="deleteContact(\''+c.id+'\')" style="color:var(--red)">X</button></div></td></tr>';}).join('');
   updateBulkBar();
 }
 function renderContacts(){renderContactsTable();}
@@ -741,112 +1032,209 @@ function updateBulkBar(){var bar=document.getElementById('bulk-actions');documen
 function openAddContact(){document.getElementById('contact-modal-title').textContent='Add Contact';document.getElementById('contact-edit-id').value='';['c-name','c-phone','c-email','c-notes'].forEach(function(id){document.getElementById(id).value='';});document.querySelectorAll('.sess-check input').forEach(function(cb){cb.checked=false;});document.getElementById('contact-modal').classList.add('open');}
 function editContact(id){var c=contacts.find(function(x){return x.id===id;});if(!c)return;document.getElementById('contact-modal-title').textContent='Edit Contact';document.getElementById('contact-edit-id').value=id;document.getElementById('c-name').value=c.name||'';document.getElementById('c-phone').value=c.phone||'';document.getElementById('c-email').value=c.email||'';document.getElementById('c-notes').value=c.notes||'';document.querySelectorAll('.sess-check input').forEach(function(cb){cb.checked=(c.sessions||[]).indexOf(cb.value)>=0;});document.getElementById('contact-modal').classList.add('open');}
 function closeContactModal(){document.getElementById('contact-modal').classList.remove('open');}
-function saveContact(){var name=document.getElementById('c-name').value.trim();var phone=document.getElementById('c-phone').value.trim().replace(/[^0-9+]/g,'');var email=document.getElementById('c-email').value.trim();var notes=document.getElementById('c-notes').value.trim();if(!name){showToast('Name is required');return;}var sels=Array.from(document.querySelectorAll('.sess-check input:checked')).map(function(cb){return cb.value;});var eid=document.getElementById('contact-edit-id').value;if(eid){var c=contacts.find(function(x){return x.id===eid;});if(c)Object.assign(c,{name:name,phone:phone,email:email,notes:notes,sessions:sels});}else{contacts.push({id:Date.now().toString(),name:name,phone:phone,email:email,notes:notes,sessions:sels,lastSeen:'',addedAt:new Date().toISOString()});}localStorage.setItem('spark_contacts',JSON.stringify(contacts));closeContactModal();renderContactsTable();renderAudienceList();showToast(eid?'Updated':'Contact added');}
-function deleteContact(id){if(!confirm('Delete this contact?'))return;contacts=contacts.filter(function(c){return c.id!==id;});selectedContacts.delete(id);localStorage.setItem('spark_contacts',JSON.stringify(contacts));renderContactsTable();showToast('Deleted');}
-function bulkDelete(){if(!confirm('Delete '+selectedContacts.size+' contacts?'))return;contacts=contacts.filter(function(c){return!selectedContacts.has(c.id);});selectedContacts.clear();localStorage.setItem('spark_contacts',JSON.stringify(contacts));renderContactsTable();showToast('Deleted');}
-function bulkWhatsApp(){contacts.filter(function(c){return selectedContacts.has(c.id)&&c.phone;}).forEach(function(c,i){setTimeout(function(){window.open('https://wa.me/'+c.phone+'?text='+encodeURIComponent('Hi '+c.name.split(' ')[0]+' - '+adminName),'_blank');},i*500);});}
-function importCSV(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){var lines=ev.target.result.trim().split('\n');var hdrs=lines[0].split(',').map(function(h){return h.trim().toLowerCase();});var added=0;lines.slice(1).forEach(function(line){var cols=line.split(',').map(function(c){return c.trim().replace(/^"|"$/g,'');});var get=function(key){var i=hdrs.findIndex(function(h){return h.indexOf(key)>=0;});return i>=0?cols[i]:'';};var name=get('name');if(!name||contacts.find(function(c){return c.name.toLowerCase()===name.toLowerCase();}))return;contacts.push({id:Date.now().toString()+Math.random(),name:name,phone:get('phone').replace(/[^0-9+]/g,''),email:get('email'),notes:get('note'),sessions:[],lastSeen:'',addedAt:new Date().toISOString()});added++;});localStorage.setItem('spark_contacts',JSON.stringify(contacts));renderContactsTable();renderAudienceList();showToast('Imported '+added+' contacts');};reader.readAsText(file);e.target.value='';}
 
-function renderAudienceList(){
-  var filter=(document.getElementById('aud-filter')||{}).value||'';
-  var now=new Date();
-  var filtered=filter==='inactive'?contacts.filter(function(c){if(!c.lastSeen)return true;var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));return isNaN(d)||(now-d)/(1000*60*60*24)>=30;}):filter?contacts.filter(function(c){return(c.sessions||[]).some(function(s){return s.toLowerCase().indexOf(filter.toLowerCase())>=0;});}):contacts;
-  var el=document.getElementById('audience-list');if(!el)return;
-  if(!filtered.length){el.innerHTML='<div class="empty" style="padding:12px">No contacts match this filter.</div>';return;}
-  el.innerHTML=filtered.map(function(c){return '<div class="audience-item '+(selectedAudience.has(c.id)?'selected':'')+'" onclick="toggleAudience(\''+c.id+'\',this)"><input type="checkbox" '+(selectedAudience.has(c.id)?'checked':'')+' onclick="event.stopPropagation()"><div class="avatar" style="width:24px;height:24px;font-size:9px">'+ini(c.name)+'</div><div style="flex:1;min-width:0"><div class="audience-name">'+c.name+'</div><div class="audience-meta">'+((c.sessions||[]).slice(0,2).join(', ')||'No sessions')+'</div></div></div>';}).join('');
-  document.getElementById('aud-count').textContent=selectedAudience.size+' selected';
+// saveContact — also upserts to Supabase (NEW)
+function saveContact(){
+  var name=document.getElementById('c-name').value.trim();var phone=document.getElementById('c-phone').value.trim().replace(/[^0-9+]/g,'');var email=document.getElementById('c-email').value.trim();var notes=document.getElementById('c-notes').value.trim();
+  if(!name){showToast('Name is required');return;}
+  var sels=Array.from(document.querySelectorAll('.sess-check input:checked')).map(function(cb){return cb.value;});
+  var eid=document.getElementById('contact-edit-id').value;
+  var contactObj;
+  if(eid){var c=contacts.find(function(x){return x.id===eid;});if(c){Object.assign(c,{name:name,phone:phone,email:email,notes:notes,sessions:sels});contactObj=c;}}
+  else{contactObj={id:Date.now().toString(),name:name,phone:phone,email:email,notes:notes,sessions:sels,lastSeen:'',addedAt:new Date().toISOString()};contacts.push(contactObj);}
+  localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+  if(contactObj)saveContactToSupabase(contactObj); // non-blocking
+  closeContactModal();renderContactsTable();renderAudienceList();showToast(eid?'Updated':'Contact added');
 }
+
+// deleteContact — also deletes from Supabase (NEW)
+function deleteContact(id){
+  if(!confirm('Delete this contact?'))return;
+  contacts=contacts.filter(function(c){return c.id!==id;});selectedContacts.delete(id);
+  localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+  deleteContactFromSupabase(id); // non-blocking
+  renderContactsTable();showToast('Deleted');
+}
+
+function bulkDelete(){if(!confirm('Delete '+selectedContacts.size+' contacts?'))return;var toDelete=Array.from(selectedContacts);contacts=contacts.filter(function(c){return!selectedContacts.has(c.id);});selectedContacts.clear();localStorage.setItem('spark_contacts',JSON.stringify(contacts));toDelete.forEach(function(id){deleteContactFromSupabase(id);});renderContactsTable();showToast('Deleted');}
+function bulkWhatsApp(){contacts.filter(function(c){return selectedContacts.has(c.id)&&c.phone;}).forEach(function(c,i){setTimeout(function(){window.open('https://wa.me/'+c.phone+'?text='+encodeURIComponent('Hi '+c.name.split(' ')[0]+' - '+adminName),'_blank');},i*500);});}
+function importCSV(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){var lines=ev.target.result.trim().split('\n');var hdrs=lines[0].split(',').map(function(h){return h.trim().toLowerCase();});var added=0;lines.slice(1).forEach(function(line){var cols=line.split(',').map(function(c){return c.trim().replace(/^"|"$/g,'');});var get=function(key){var i=hdrs.findIndex(function(h){return h.indexOf(key)>=0;});return i>=0?cols[i]:'';};var name=get('name');if(!name||contacts.find(function(c){return c.name.toLowerCase()===name.toLowerCase();}))return;var nc={id:Date.now().toString()+Math.random(),name:name,phone:get('phone').replace(/[^0-9+]/g,''),email:get('email'),notes:get('note'),sessions:[],lastSeen:'',addedAt:new Date().toISOString()};contacts.push(nc);saveContactToSupabase(nc);added++;});localStorage.setItem('spark_contacts',JSON.stringify(contacts));renderContactsTable();renderAudienceList();showToast('Imported '+added+' contacts');};reader.readAsText(file);e.target.value='';}
+
+function renderAudienceList(){var filter=(document.getElementById('aud-filter')||{}).value||'';var now=new Date();var filtered=filter==='inactive'?contacts.filter(function(c){if(!c.lastSeen)return true;var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));return isNaN(d)||(now-d)/(1000*60*60*24)>=30;}):filter?contacts.filter(function(c){return(c.sessions||[]).some(function(s){return s.toLowerCase().indexOf(filter.toLowerCase())>=0;});}):contacts;var el=document.getElementById('audience-list');if(!el)return;if(!filtered.length){el.innerHTML='<div class="empty" style="padding:12px">No contacts match this filter.</div>';return;}el.innerHTML=filtered.map(function(c){return '<div class="audience-item '+(selectedAudience.has(c.id)?'selected':'')+'" onclick="toggleAudience(\''+c.id+'\',this)"><input type="checkbox" '+(selectedAudience.has(c.id)?'checked':'')+' onclick="event.stopPropagation()"><div class="avatar" style="width:24px;height:24px;font-size:9px">'+ini(c.name)+'</div><div style="flex:1;min-width:0"><div class="audience-name">'+c.name+'</div><div class="audience-meta">'+((c.sessions||[]).slice(0,2).join(', ')||'No sessions')+'</div></div></div>';}).join('');document.getElementById('aud-count').textContent=selectedAudience.size+' selected';}
 function filterAudience(){selectedAudience.clear();renderAudienceList();}
 function toggleAudience(id,el){if(selectedAudience.has(id)){selectedAudience.delete(id);el.classList.remove('selected');el.querySelector('input').checked=false;}else{selectedAudience.add(id);el.classList.add('selected');el.querySelector('input').checked=true;}document.getElementById('aud-count').textContent=selectedAudience.size+' selected';}
 function selectAllAudience(){document.querySelectorAll('.audience-item').forEach(function(el){var m=el.getAttribute('onclick').match(/'([^']+)'/);if(m){selectedAudience.add(m[1]);el.classList.add('selected');el.querySelector('input').checked=true;}});document.getElementById('aud-count').textContent=selectedAudience.size+' selected';}
 
-function renderMsgs(msgs){
-  window.msgTexts=msgs;document.getElementById('msg-count').textContent=msgs.length+' messages';document.getElementById('send-all-btn').style.display='block';
-  document.getElementById('broadcast-messages').innerHTML=msgs.map(function(m,i){var wm=encodeURIComponent(m.text);return '<div class="msg-card fade-in" style="animation-delay:'+(i*0.04)+'s"><div class="msg-card-name">'+m.contact.name+'</div><div class="msg-text" id="msg-'+i+'">'+m.text+'</div><div class="msg-actions">'+(m.contact.phone?'<a class="wa-btn" href="https://wa.me/'+m.contact.phone+'?text='+wm+'" target="_blank">Send WhatsApp</a>':'<span style="font-size:11px;color:var(--muted)">No phone number</span>')+'<button class="copy-btn" onclick="copyMsg('+i+')">Copy</button></div></div>';}).join('');
-}
+function renderMsgs(msgs){window.msgTexts=msgs;document.getElementById('msg-count').textContent=msgs.length+' messages';document.getElementById('send-all-btn').style.display='block';document.getElementById('broadcast-messages').innerHTML=msgs.map(function(m,i){var wm=encodeURIComponent(m.text);return '<div class="msg-card fade-in" style="animation-delay:'+(i*0.04)+'s"><div class="msg-card-name">'+m.contact.name+'</div><div class="msg-text" id="msg-'+i+'">'+m.text+'</div><div class="msg-actions">'+(m.contact.phone?'<a class="wa-btn" href="https://wa.me/'+m.contact.phone+'?text='+wm+'" target="_blank">Send WhatsApp</a>':'<span style="font-size:11px;color:var(--muted)">No phone number</span>')+'<button class="copy-btn" onclick="copyMsg('+i+')">Copy</button></div></div>';}).join('');}
 function copyMsg(i){navigator.clipboard.writeText(document.getElementById('msg-'+i).textContent);showToast('Copied');}
 function sendAllWhatsApp(){if(!window.msgTexts)return;window.msgTexts.forEach(function(m,i){if(m.contact.phone)setTimeout(function(){window.open('https://wa.me/'+m.contact.phone+'?text='+encodeURIComponent(m.text),'_blank');},i*600);});}
+
+// ── [BACKEND PROXY] AI call routed through proxy if configured ────
+async function callAI(system,userMsg,maxTokens,model){
+  var endpoint='https://api.anthropic.com/v1/messages';
+  var headers={'Content-Type':'application/json','anthropic-version':'2023-06-01'};
+  if(proxyURL){
+    // Route through backend proxy — no API key in browser
+    endpoint=proxyURL+'/api/anthropic';
+  }else{
+    // Direct call (original fallback)
+    headers['x-api-key']=apiKey;
+    headers['anthropic-dangerous-direct-browser-access']='true';
+  }
+  var res=await fetch(endpoint,{method:'POST',headers:headers,body:JSON.stringify({model:model,max_tokens:maxTokens,system:system,messages:[{role:'user',content:userMsg}]})});
+  if(!res.ok){var e=await res.json();throw new Error(e.error&&e.error.message?e.error.message:'API '+res.status);}
+  return(await res.json()).content[0].text;
+}
 
 async function batchAI(system,cdata,context,type){
   var lines=cdata.map(function(c,i){return (i+1)+'. Name: '+c.name+', Sessions: '+(c.sessions||'various');}).join('\n');
   var prompt='Write personalised messages for '+cdata.length+' clients. Return ONLY a JSON array: [{"name":"...","intro":"..."}]. No markdown.\n\nType: '+type+'\nContext: '+context+'\n\nClients:\n'+lines;
-  var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:MH,max_tokens:Math.min(200*cdata.length+500,4000),system:system,messages:[{role:'user',content:prompt}]})});
+  var endpoint='https://api.anthropic.com/v1/messages';
+  var headers={'Content-Type':'application/json','anthropic-version':'2023-06-01'};
+  if(proxyURL){endpoint=proxyURL+'/api/anthropic';}
+  else{headers['x-api-key']=apiKey;headers['anthropic-dangerous-direct-browser-access']='true';}
+  var res=await fetch(endpoint,{method:'POST',headers:headers,body:JSON.stringify({model:MH,max_tokens:Math.min(200*cdata.length+500,4000),system:system,messages:[{role:'user',content:prompt}]})});
   if(!res.ok){var e=await res.json();throw new Error(e.error&&e.error.message?e.error.message:'API '+res.status);}
   var text=(await res.json()).content[0].text;
   try{return JSON.parse(text.replace(/```json|```/g,'').trim());}catch(e){return null;}
 }
 
+// ── [CHART.JS] Reports charts (NEW) ──────────────────────────────
+var chartRevenue=null,chartSessions=null,chartPracts=null;
+
+function renderCharts(){
+  if(!window.Chart)return;
+  var CHART_DEFAULTS={color:'rgba(238,242,240,.7)',borderColor:'rgba(255,255,255,.08)',gridColor:'rgba(255,255,255,.05)'};
+
+  // 1. Revenue trend line chart
+  var revenueData=months.map(function(m){return sessions.filter(function(r){return f(r,'Month','month').trim()===m;}).reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);});
+  var ctxRev=document.getElementById('chart-revenue');
+  if(ctxRev){
+    if(chartRevenue)chartRevenue.destroy();
+    chartRevenue=new Chart(ctxRev,{type:'line',data:{labels:months.map(function(m){return m.split(' ')[0];}),datasets:[{label:'Revenue (KES)',data:revenueData,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.08)',borderWidth:2,pointBackgroundColor:'#4ade80',pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return 'KES '+ctx.parsed.y.toLocaleString();}}}},scales:{x:{ticks:{color:CHART_DEFAULTS.color,font:{size:10}},grid:{color:CHART_DEFAULTS.gridColor}},y:{ticks:{color:CHART_DEFAULTS.color,font:{size:10},callback:function(v){return 'K'+(v/1000).toFixed(0);}},grid:{color:CHART_DEFAULTS.gridColor}}}}});
+  }
+
+  // 2. Session types doughnut
+  var typeCounts={};sessions.forEach(function(r){var nm=f(r,'Session Name','session name','Session','type','Type')||'Other';typeCounts[nm]=(typeCounts[nm]||0)+1;});
+  var typeLabels=Object.keys(typeCounts);var typeData=Object.values(typeCounts);
+  var PIE_COLORS=['#4ade80','#60a5fa','#f0c040','#fb923c','#f87171','#a78bfa','#34d399'];
+  var ctxSess=document.getElementById('chart-sessions');
+  if(ctxSess){
+    if(chartSessions)chartSessions.destroy();
+    chartSessions=new Chart(ctxSess,{type:'doughnut',data:{labels:typeLabels,datasets:[{data:typeData,backgroundColor:PIE_COLORS,borderColor:CHART_DEFAULTS.borderColor,borderWidth:2}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:CHART_DEFAULTS.color,font:{size:10},padding:8}}}}});
+  }
+
+  // 3. Practitioner revenue bar chart
+  var practNames=Array.from(new Set(sessions.map(function(r){return f(r,'Practitioner','practitioner');}).filter(Boolean)));
+  var practRevs=practNames.map(function(nm){return sessions.filter(function(r){return f(r,'Practitioner','practitioner').toLowerCase()===nm.toLowerCase();}).reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);});
+  var ctxPract=document.getElementById('chart-practitioners');
+  if(ctxPract){
+    if(chartPracts)chartPracts.destroy();
+    chartPracts=new Chart(ctxPract,{type:'bar',data:{labels:practNames,datasets:[{label:'Revenue (KES)',data:practRevs,backgroundColor:'rgba(96,165,250,.5)',borderColor:'#60a5fa',borderWidth:1,borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return 'KES '+ctx.parsed.y.toLocaleString();}}}},scales:{x:{ticks:{color:CHART_DEFAULTS.color,font:{size:10}},grid:{color:CHART_DEFAULTS.gridColor}},y:{ticks:{color:CHART_DEFAULTS.color,font:{size:10},callback:function(v){return 'K'+(v/1000).toFixed(0);}},grid:{color:CHART_DEFAULTS.gridColor}}}}});
+  }
+}
+
 function renderReportsTab(){
   var pns=Array.from(new Set(sessions.map(function(r){return f(r,'Practitioner','practitioner');}).filter(Boolean)));
-  document.getElementById('pract-report-list').innerHTML=pns.map(function(name){var as=sessions.filter(function(r){return f(r,'Practitioner','practitioner').toLowerCase()===name.toLowerCase();});var tr=as.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);return '<div class="report-card"><div class="report-icon" style="background:var(--eglow);color:var(--emerald);font-family:\'DM Mono\',monospace;font-size:10px">'+ini(name)+'</div><div class="report-info"><div class="report-name">'+name+'</div><div class="report-desc">'+as.length+' sessions '+fmt(tr)+' revenue</div></div><button class="btn btn-primary btn-sm" onclick="downloadPractReport(\''+name+'\')">Download PDF</button></div>';}).join('');}
+  document.getElementById('pract-report-list').innerHTML=pns.map(function(name){var as=sessions.filter(function(r){return f(r,'Practitioner','practitioner').toLowerCase()===name.toLowerCase();});var tr=as.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);return '<div class="report-card"><div class="report-icon" style="background:var(--eglow);color:var(--emerald);font-family:\'DM Mono\',monospace;font-size:10px">'+ini(name)+'</div><div class="report-info"><div class="report-name">'+name+'</div><div class="report-desc">'+as.length+' sessions '+fmt(tr)+' revenue</div></div><button class="btn btn-primary btn-sm" onclick="downloadPractReport(\''+name+'\')">Download PDF</button></div>';}).join('');
+  renderCharts();
+}
 function populateReportMonths(){var sel=document.getElementById('report-month-sel');if(!sel)return;sel.innerHTML=months.map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join('');if(months.length)sel.value=months[months.length-1];}
 
-function downloadPractReport(name){
-  if(!window.jspdf){showToast('PDF library not loaded');return;}var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:'mm',format:'a4'});var W=doc.internal.pageSize.getWidth(),pad=18,y=20;
-  doc.setFillColor(20,30,25);doc.rect(0,0,W,36,'F');doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);doc.text('SPARK Studio',pad,14);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(167,212,186);doc.text('Practitioner Report',pad,22);doc.setFontSize(9);doc.setTextColor(107,128,120);doc.text('Generated '+new Date().toLocaleDateString(),W-pad,22,{align:'right'});y=46;
-  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text(name,pad,y);y+=8;
-  var as=sessions.filter(function(r){return f(r,'Practitioner','practitioner').toLowerCase()===name.toLowerCase();});var tr=as.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);
-  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text('Total Sessions: '+as.length+'   Total Revenue: '+fmt(tr),pad,y);y+=10;
-  months.forEach(function(month){var ms=as.filter(function(r){return f(r,'Month','month').trim()===month;});if(!ms.length)return;if(y>250){doc.addPage();y=20;}var b=calcBalance(name,month);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text(month,pad,y);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text(ms.length+' sessions  Commission: '+fmt(b.totalComm)+'  Owed: '+fmt(b.netOwed),pad+32,y);y+=5;ms.forEach(function(r){if(y>265){doc.addPage();y=20;}doc.setFontSize(8.5);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text(f(r,'Date','date'),pad,y);doc.text((f(r,'Session Name','Session','type','Type')||'Session').slice(0,28),pad+22,y);doc.text(f(r,'Attendees','attendees')+' att.',pad+68,y);doc.text(fmt(n(f(r,'Total Rev.','Total Rev','Total Revenue'))),W-pad,y,{align:'right'});y+=5;});y+=3;});
-  doc.save('SPARK_'+name.replace(/\s/g,'_')+'_Report.pdf');showToast(name+' report downloaded');
-}
-function downloadYTDReport(){
-  if(!window.jspdf){showToast('PDF library not loaded');return;}var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:'mm',format:'a4'});var W=doc.internal.pageSize.getWidth(),pad=18,y=20;
-  doc.setFillColor(20,30,25);doc.rect(0,0,W,36,'F');doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);doc.text('SPARK Studio',pad,14);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(167,212,186);doc.text('Year-to-Date Financial Report',pad,22);y=46;
-  var tr=sessions.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text('Total Revenue: '+fmt(tr)+'   Sessions: '+sessions.length+'   Months: '+months.length,pad,y);y+=10;
-  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(107,128,120);doc.text('MONTHLY SUMMARY',pad,y);y+=5;doc.setDrawColor(220,228,224);doc.line(pad,y,W-pad,y);y+=4;
-  months.forEach(function(month){if(y>265){doc.addPage();y=20;}var rows=sessions.filter(function(r){return f(r,'Month','month').trim()===month;});var rev=rows.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);var stu=rows.reduce(function(s,r){return s+n(f(r,'Studio Recv.','Studio Recv','Studio Received'));},0);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(20,30,25);doc.text(month,pad,y);doc.setTextColor(34,139,34);doc.text(fmt(rev),pad+42,y);doc.setTextColor(107,128,120);doc.text(rows.length+' sessions',pad+82,y);doc.text('Studio: '+fmt(stu),W-pad,y,{align:'right'});y+=6;});
-  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text('SPARK Studio Confidential '+new Date().toLocaleDateString(),W/2,285,{align:'center'});
-  doc.save('SPARK_YTD_Report.pdf');showToast('YTD report downloaded');
-}
-function downloadMonthlyReport(){
-  var month=(document.getElementById('report-month-sel')||{}).value;if(!month){showToast('Select a month');return;}
-  if(!window.jspdf){showToast('PDF library not loaded');return;}var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:'mm',format:'a4'});var W=doc.internal.pageSize.getWidth(),pad=18,y=20;
-  doc.setFillColor(20,30,25);doc.rect(0,0,W,36,'F');doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);doc.text('SPARK Studio',pad,14);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(167,212,186);doc.text('Monthly Report - '+month,pad,22);y=46;
-  var rows=sessions.filter(function(r){return f(r,'Month','month').trim()===month;});var rev=rows.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);
-  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text('Revenue: '+fmt(rev)+'   Sessions: '+rows.length,pad,y);y+=10;
-  rows.forEach(function(r){if(y>265){doc.addPage();y=20;}doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(20,30,25);doc.text(f(r,'Date','date'),pad,y);doc.text((f(r,'Session Name','Session','type','Type')||'Session').slice(0,28),pad+24,y);doc.text(f(r,'Practitioner','practitioner'),pad+80,y);doc.setFont('helvetica','bold');doc.text(fmt(n(f(r,'Total Rev.','Total Rev','Total Revenue'))),W-pad,y,{align:'right'});y+=6;});
-  doc.save('SPARK_'+month.replace(/\s/g,'_')+'.pdf');showToast(month+' report downloaded');
-}
+// PDF downloads (unchanged)
+function downloadPractReport(name){if(!window.jspdf){showToast('PDF library not loaded');return;}var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:'mm',format:'a4'});var W=doc.internal.pageSize.getWidth(),pad=18,y=20;doc.setFillColor(20,30,25);doc.rect(0,0,W,36,'F');doc.setFontSize(22);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);doc.text('SPARK Studio',pad,14);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(167,212,186);doc.text('Practitioner Report',pad,22);doc.setFontSize(9);doc.setTextColor(107,128,120);doc.text('Generated '+new Date().toLocaleDateString(),W-pad,22,{align:'right'});y=46;doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text(name,pad,y);y+=8;var as=sessions.filter(function(r){return f(r,'Practitioner','practitioner').toLowerCase()===name.toLowerCase();});var tr=as.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text('Total Sessions: '+as.length+'   Total Revenue: '+fmt(tr),pad,y);y+=10;months.forEach(function(month){var ms=as.filter(function(r){return f(r,'Month','month').trim()===month;});if(!ms.length)return;if(y>250){doc.addPage();y=20;}var b=calcBalance(name,month);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text(month,pad,y);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text(ms.length+' sessions  Commission: '+fmt(b.totalComm)+'  Owed: '+fmt(b.netOwed),pad+32,y);y+=5;ms.forEach(function(r){if(y>265){doc.addPage();y=20;}doc.setFontSize(8.5);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text(f(r,'Date','date'),pad,y);doc.text((f(r,'Session Name','Session','type','Type')||'Session').slice(0,28),pad+22,y);doc.text(f(r,'Attendees','attendees')+' att.',pad+68,y);doc.text(fmt(n(f(r,'Total Rev.','Total Rev','Total Revenue'))),W-pad,y,{align:'right'});y+=5;});y+=3;});doc.save('SPARK_'+name.replace(/\s/g,'_')+'_Report.pdf');showToast(name+' report downloaded');}
+function downloadYTDReport(){if(!window.jspdf){showToast('PDF library not loaded');return;}var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:'mm',format:'a4'});var W=doc.internal.pageSize.getWidth(),pad=18,y=20;doc.setFillColor(20,30,25);doc.rect(0,0,W,36,'F');doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);doc.text('SPARK Studio',pad,14);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(167,212,186);doc.text('Year-to-Date Financial Report',pad,22);y=46;var tr=sessions.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text('Total Revenue: '+fmt(tr)+'   Sessions: '+sessions.length+'   Months: '+months.length,pad,y);y+=10;doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(107,128,120);doc.text('MONTHLY SUMMARY',pad,y);y+=5;doc.setDrawColor(220,228,224);doc.line(pad,y,W-pad,y);y+=4;months.forEach(function(month){if(y>265){doc.addPage();y=20;}var rows=sessions.filter(function(r){return f(r,'Month','month').trim()===month;});var rev=rows.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);var stu=rows.reduce(function(s,r){return s+n(f(r,'Studio Recv.','Studio Recv','Studio Received'));},0);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(20,30,25);doc.text(month,pad,y);doc.setTextColor(34,139,34);doc.text(fmt(rev),pad+42,y);doc.setTextColor(107,128,120);doc.text(rows.length+' sessions',pad+82,y);doc.text('Studio: '+fmt(stu),W-pad,y,{align:'right'});y+=6;});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(107,128,120);doc.text('SPARK Studio Confidential '+new Date().toLocaleDateString(),W/2,285,{align:'center'});doc.save('SPARK_YTD_Report.pdf');showToast('YTD report downloaded');}
+function downloadMonthlyReport(){var month=(document.getElementById('report-month-sel')||{}).value;if(!month){showToast('Select a month');return;}if(!window.jspdf){showToast('PDF library not loaded');return;}var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({unit:'mm',format:'a4'});var W=doc.internal.pageSize.getWidth(),pad=18,y=20;doc.setFillColor(20,30,25);doc.rect(0,0,W,36,'F');doc.setFontSize(20);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);doc.text('SPARK Studio',pad,14);doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(167,212,186);doc.text('Monthly Report - '+month,pad,22);y=46;var rows=sessions.filter(function(r){return f(r,'Month','month').trim()===month;});var rev=rows.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(20,30,25);doc.text('Revenue: '+fmt(rev)+'   Sessions: '+rows.length,pad,y);y+=10;rows.forEach(function(r){if(y>265){doc.addPage();y=20;}doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(20,30,25);doc.text(f(r,'Date','date'),pad,y);doc.text((f(r,'Session Name','Session','type','Type')||'Session').slice(0,28),pad+24,y);doc.text(f(r,'Practitioner','practitioner'),pad+80,y);doc.setFont('helvetica','bold');doc.text(fmt(n(f(r,'Total Rev.','Total Rev','Total Revenue'))),W-pad,y,{align:'right'});y+=6;});doc.save('SPARK_'+month.replace(/\s/g,'_')+'.pdf');showToast(month+' report downloaded');}
 
-async function generateDailyBrief(){
-  var cm=months[months.length-1]||'';var mR=sessions.filter(function(r){return f(r,'Month','month').trim()===cm;});var tr=mR.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);
-  var now=new Date();var inact=contacts.filter(function(c){if(!c.lastSeen)return false;var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));return !isNaN(d)&&(now-d)/(1000*60*60*24)>=21;});
-  var u2=ensoSessions.filter(function(s){return daysUntil(s.date)===2;});
-  var data={totalSessions:sessions.length,currentMonth:cm,monthRevenue:fmt(tr),monthSessions:mR.length,totalContacts:contacts.length,inactiveClients:inact.length,inactiveNames:inact.slice(0,3).map(function(c){return c.name;}).join(', '),upcomingIn2Days:u2.map(function(s){return s.name+' on '+s.dateStr;}).join('; ')||'none'};
-  var sys='You are the AI assistant for '+studioName+', a Nairobi wellness studio. Write a warm specific daily brief for '+adminName+' in 3 short paragraphs: 1) revenue insight, 2) follow-up or RSVP reminders, 3) one action for today. Be direct and personal.';
-  try{var res=await callAI(sys,'Studio data: '+JSON.stringify(data),400,MH);var title='Good '+tod()+', '+adminName;var content=res.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');showBrief(title,content);localStorage.setItem('spark_brief_text',JSON.stringify({title:title,content:content}));}
-  catch(e){showBrief('Good '+tod()+', '+adminName,'<p>'+studioName+' is live. '+sessions.length+' sessions recorded, '+contacts.length+' contacts in database.</p>');}
-}
+async function generateDailyBrief(){var cm=months[months.length-1]||'';var mR=sessions.filter(function(r){return f(r,'Month','month').trim()===cm;});var tr=mR.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0);var now=new Date();var inact=contacts.filter(function(c){if(!c.lastSeen)return false;var d=new Date(c.lastSeen.replace(/(\d+)-([A-Za-z]+)-(\d+)/,'$2 $1, $3'));return !isNaN(d)&&(now-d)/(1000*60*60*24)>=21;});var u2=ensoSessions.filter(function(s){return daysUntil(s.date)===2;});var data={totalSessions:sessions.length,currentMonth:cm,monthRevenue:fmt(tr),monthSessions:mR.length,totalContacts:contacts.length,inactiveClients:inact.length,inactiveNames:inact.slice(0,3).map(function(c){return c.name;}).join(', '),upcomingIn2Days:u2.map(function(s){return s.name+' on '+s.dateStr;}).join('; ')||'none'};var sys='You are the AI assistant for '+studioName+', a Nairobi wellness studio. Write a warm specific daily brief for '+adminName+' in 3 short paragraphs: 1) revenue insight, 2) follow-up or RSVP reminders, 3) one action for today. Be direct and personal.';try{var res=await callAI(sys,'Studio data: '+JSON.stringify(data),400,MH);var title='Good '+tod()+', '+adminName;var content=res.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');showBrief(title,content);localStorage.setItem('spark_brief_text',JSON.stringify({title:title,content:content}));}catch(e){showBrief('Good '+tod()+', '+adminName,'<p>'+studioName+' is live. '+sessions.length+' sessions recorded, '+contacts.length+' contacts in database.</p>');}}
 function showBrief(t,c){document.getElementById('brief-title').textContent=t;document.getElementById('brief-content').innerHTML=c;}
 function tod(){var h=new Date().getHours();return h<12?'morning':h<17?'afternoon':'evening';}
 
 function chatKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}
-async function sendChat(){
-  var input=document.getElementById('chat-input');var text=input.value.trim();if(!text)return;input.value='';appendMsg(text,'user');document.getElementById('chat-send').disabled=true;
-  var cm=months[months.length-1]||'';var mR=sessions.filter(function(r){return f(r,'Month','month').trim()===cm;});
-  var ctx={studioName:studioName,adminName:adminName,totalSessions:sessions.length,currentMonth:cm,monthRevenue:fmt(mR.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0)),contacts:contacts.slice(0,40).map(function(c){return{name:c.name,sessions:c.sessions,lastSeen:c.lastSeen};}),upcoming:ensoSessions.slice(0,6).map(function(s){return{name:s.name,date:s.dateStr,daysUntil:daysUntil(s.date),rsvps:(rsvpData[s.id]||[]).map(function(r){return r.name;})};})};
-  var sys='You are the AI for '+studioName+', a Nairobi wellness studio. Answer using the studio data provided. Be specific and actionable.';
-  var loading=appendMsg('Thinking...','ai');
-  try{var res=await callAI(sys,'Context: '+JSON.stringify(ctx)+'\nQuestion: '+text,600,MS);loading.innerHTML=res.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');}
-  catch(e){loading.innerHTML='<p>Error: '+e.message+'</p>';}
-  document.getElementById('chat-send').disabled=false;document.getElementById('chat-msgs').scrollTop=9999;
-}
+async function sendChat(){var input=document.getElementById('chat-input');var text=input.value.trim();if(!text)return;input.value='';appendMsg(text,'user');document.getElementById('chat-send').disabled=true;var cm=months[months.length-1]||'';var mR=sessions.filter(function(r){return f(r,'Month','month').trim()===cm;});var ctx={studioName:studioName,adminName:adminName,totalSessions:sessions.length,currentMonth:cm,monthRevenue:fmt(mR.reduce(function(s,r){return s+n(f(r,'Total Rev.','Total Rev','Total Revenue'));},0)),contacts:contacts.slice(0,40).map(function(c){return{name:c.name,sessions:c.sessions,lastSeen:c.lastSeen};}),upcoming:ensoSessions.slice(0,6).map(function(s){return{name:s.name,date:s.dateStr,daysUntil:daysUntil(s.date),rsvps:(rsvpData[s.id]||[]).map(function(r){return r.name;})};})};var sys='You are the AI for '+studioName+', a Nairobi wellness studio. Answer using the studio data provided. Be specific and actionable.';var loading=appendMsg('Thinking...','ai');try{var res=await callAI(sys,'Context: '+JSON.stringify(ctx)+'\nQuestion: '+text,600,MS);loading.innerHTML=res.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');}catch(e){loading.innerHTML='<p>Error: '+e.message+'</p>';}document.getElementById('chat-send').disabled=false;document.getElementById('chat-msgs').scrollTop=9999;}
 function appendMsg(text,role){var el=document.createElement('div');el.className='msg-'+role+' fade-in';el.innerHTML='<p>'+text+'</p>';document.getElementById('chat-msgs').appendChild(el);document.getElementById('chat-msgs').scrollTop=9999;return el;}
 
-async function callAI(system,userMsg,maxTokens,model){
-  var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:model,max_tokens:maxTokens,system:system,messages:[{role:'user',content:userMsg}]})});
-  if(!res.ok){var e=await res.json();throw new Error(e.error&&e.error.message?e.error.message:'API '+res.status);}
-  return(await res.json()).content[0].text;
+// ── [EXPORT/BACKUP] Export and restore (NEW) ─────────────────────
+function exportBackup(){
+  var backup={version:1,exportedAt:new Date().toISOString(),contacts:contacts,rsvpData:rsvpData,ensoSessions:ensoSessions.map(function(s){return Object.assign({},s,{date:new Date(s.date).toISOString()});})};
+  var blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='spark-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded');
 }
 
-function openSettings(){document.getElementById('s-apikey').value=apiKey;document.getElementById('s-name').value=adminName;document.getElementById('s-studio').value=studioName;document.getElementById('s-waphone').value=studioPhone;document.getElementById('settings-modal').classList.add('open');}
-function closeSettingsModal(){document.getElementById('settings-modal').classList.remove('open');}
-function saveSettingsModal(){var k=document.getElementById('s-apikey').value.trim();var nm=document.getElementById('s-name').value.trim();var s=document.getElementById('s-studio').value.trim();var p=document.getElementById('s-waphone').value.trim();if(k){localStorage.setItem('spark_apikey',k);apiKey=k;}if(nm){localStorage.setItem('spark_admin_name',nm);adminName=nm;}if(s){localStorage.setItem('spark_studio_name',s);studioName=s;}if(p){localStorage.setItem('spark_wa_phone',p);studioPhone=p;}closeSettingsModal();showToast('Settings saved');}
+function importBackup(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var data=JSON.parse(ev.target.result);
+      if(!data.contacts||!data.rsvpData){showToast('Invalid backup file');return;}
+      if(!confirm('This will replace all current contacts, RSVPs, and sessions. Continue?'))return;
+      contacts=data.contacts||[];
+      rsvpData=data.rsvpData||{};
+      ensoSessions=(data.ensoSessions||[]).map(function(s){return Object.assign({},s,{date:new Date(s.date)});});
+      localStorage.setItem('spark_contacts',JSON.stringify(contacts));
+      localStorage.setItem('spark_rsvp',JSON.stringify(rsvpData));
+      localStorage.setItem('spark_upcoming_sessions',JSON.stringify(ensoSessions));
+      // Sync restored contacts to Supabase if available
+      if(supabaseClient){contacts.forEach(function(c){saveContactToSupabase(c);});}
+      renderContactsTable();renderAudienceList();renderRsvpTab();renderCalendarView();renderDashboard();
+      showToast('Backup restored — '+contacts.length+' contacts, '+ensoSessions.length+' sessions');
+    }catch(err){showToast('Failed to parse backup file');}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
 
-function showTab(id){document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.nav-tab,.bnav-btn').forEach(function(b){b.classList.remove('active');});document.getElementById('tab-'+id).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(b){if(b.textContent.toLowerCase().indexOf(id.slice(0,4))>=0)b.classList.add('active');});var bn=document.getElementById('bnav-'+id);if(bn)bn.classList.add('active');if(id==='contacts')renderContactsTable();if(id==='broadcast'){renderAudienceList();renderWeeklyBlastPreview();}if(id==='rsvp')renderRsvpTab();if(id==='reports'){renderReportsTab();populateReportMonths();}document.querySelector('.content').scrollTop=0;}
+// Settings (upgraded with proxy + Supabase fields)
+function openSettings(){
+  document.getElementById('s-apikey').value=apiKey;
+  document.getElementById('s-name').value=adminName;
+  document.getElementById('s-studio').value=studioName;
+  document.getElementById('s-waphone').value=studioPhone;
+  document.getElementById('s-proxy').value=proxyURL;
+  document.getElementById('s-supa-url').value=localStorage.getItem('spark_supa_url')||'';
+  document.getElementById('s-supa-key').value=localStorage.getItem('spark_supa_key')||'';
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettingsModal(){document.getElementById('settings-modal').classList.remove('open');}
+function saveSettingsModal(){
+  var k=document.getElementById('s-apikey').value.trim();
+  var nm=document.getElementById('s-name').value.trim();
+  var s=document.getElementById('s-studio').value.trim();
+  var p=document.getElementById('s-waphone').value.trim();
+  var px=document.getElementById('s-proxy').value.trim().replace(/\/$/,'');
+  var su=document.getElementById('s-supa-url').value.trim();
+  var sk=document.getElementById('s-supa-key').value.trim();
+  if(k){localStorage.setItem('spark_apikey',k);apiKey=k;}
+  if(nm){localStorage.setItem('spark_admin_name',nm);adminName=nm;}
+  if(s){localStorage.setItem('spark_studio_name',s);studioName=s;}
+  if(p){localStorage.setItem('spark_wa_phone',p);studioPhone=p;}
+  localStorage.setItem('spark_proxy_url',px);proxyURL=px;
+  if(su)localStorage.setItem('spark_supa_url',su);
+  if(sk)localStorage.setItem('spark_supa_key',sk);
+  // Re-init Supabase with new credentials
+  if(su&&sk)initSupabase();
+  closeSettingsModal();showToast('Settings saved');syncAll();
+}
+
+function showTab(id){
+  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-tab,.bnav-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(function(b){if(b.textContent.toLowerCase().indexOf(id.slice(0,4))>=0)b.classList.add('active');});
+  var bn=document.getElementById('bnav-'+id);if(bn)bn.classList.add('active');
+  if(id==='contacts')renderContactsTable();
+  if(id==='broadcast'){renderAudienceList();renderWeeklyBlastPreview();}
+  if(id==='rsvp'){renderRsvpTab();if(calendarView)renderCalendarView();}
+  if(id==='reports'){renderReportsTab();populateReportMonths();}
+  document.querySelector('.content').scrollTop=0;
+}
 function setStatus(type,text){var dot=document.getElementById('sdot');dot.className='sdot';if(type==='live')dot.classList.add('live');else if(type==='err')dot.classList.add('err');else dot.classList.add('loading');document.getElementById('stxt').textContent=text;}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
 </script>
 </body>
 </html>
+
